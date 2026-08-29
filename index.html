@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مرحبا بكم في نظامنا</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- القائمة الجانبية -->
+  <div class="sidebar">
+    <h2 id="sidebarTitle">نظام إدارة الخدمات</h2>
+    <ul>
+      <li><a href="#" class="nav-link active" onclick="switchTab(event, 'dashboardView')">الرئيسية</a></li>
+      <li><a href="#" class="nav-link" onclick="switchTab(event, 'registerView')">تسجيل الحسابات</a></li>
+      <li><a href="#" class="nav-link" onclick="switchTab(event, 'clientsView')">إدارة العملاء والمالية</a></li>
+      <li><a href="#" class="nav-link" onclick="switchTab(event, 'servicesView')">سجل الخدمات</a></li>
+      <li><a href="#" class="nav-link" onclick="switchTab(event, 'settingsView')">الإعدادات</a></li>
+    </ul>
+  </div>
+
+  <!-- المحتوى الرئيسي -->
+  <div class="main-content">
+
+    <!-- 1. واجهة الرئيسية -->
+    <div id="dashboardView" class="view-section active">
+      <div class="header-banner">
+        <h2>لوحة التحكم الرئيسية</h2>
+        <p>نظرة عامة على حالة النظام والتحكم السريع</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-title">إجمالي العملاء</div>
+          <div class="stat-value" id="totalClientsCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">إجمالي الخدمات</div>
+          <div class="stat-value" id="totalServicesCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">رصيد الدرج الحالي</div>
+          <div class="stat-value" id="dashboardDrawer">0.00 ج.م</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. واجهة تسجيل الحسابات -->
+    <div id="registerView" class="view-section">
+      <div class="card">
+        <h2>نموذج تسجيل حساب جديد</h2>
+        <form id="registrationForm">
+          <div class="form-group">
+            <label for="clientName">اسم العميل:</label>
+            <input type="text" id="clientName" placeholder="أدخل اسم العميل" required>
+          </div>
+          <div class="form-group">
+            <label for="serviceNumber">تسجيل أرقام الخدمة:</label>
+            <input type="text" id="serviceNumber" placeholder="أدخل رقم الخدمة" required>
+          </div>
+          <div class="form-group">
+            <label for="accountType">نوع الحساب:</label>
+            <select id="accountType">
+              <option value="عميل">عميل</option>
+              <option value="مدير">مدير</option>
+              <option value="فني">فني</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-submit">إضافة الحساب</button>
+        </form>
+
+        <div class="table-section margin-top">
+          <h3>الحسابات المسجلة</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>اسم العميل</th>
+                <th>رقم الخدمة</th>
+                <th>نوع الحساب</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="accountsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. واجهة إدارة العملاء والمالية -->
+    <div id="clientsView" class="view-section">
+      <div class="stats-grid">
+        <div class="stat-card border-green">
+          <div class="stat-title">رصيد الدرج (الخزينة)</div>
+          <div class="stat-value text-green" id="drawerBalance">0.00 ج.م</div>
+        </div>
+        <div class="stat-card border-red">
+          <div class="stat-title">إجمالي الديون (على العملاء / مدين)</div>
+          <div class="stat-value text-red" id="totalDebit">0.00 ج.م</div>
+        </div>
+        <div class="stat-card border-blue">
+          <div class="stat-title">إجمالي المقدمات (له / دائن)</div>
+          <div class="stat-value text-blue" id="totalCredit">0.00 ج.م</div>
+        </div>
+      </div>
+
+      <div class="card margin-top">
+        <h2>تسجيل حركة مالية (إيداع / سداد / آجل)</h2>
+        <form id="financialForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="transactionClient">اختر العميل:</label>
+              <select id="transactionClient">
+                <option value="">-- اختر العميل --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="transactionType">نوع الحركة المالية:</label>
+              <select id="transactionType" required>
+                <option value="deposit">إيداع مباشر في الدرج (دون ربط بعميل)</option>
+                <option value="pay_debt">سداد دين من عميل (يدخل الدرج)</option>
+                <option value="add_debt">تسجيل دين على عميل (آجل / مدين)</option>
+                <option value="add_credit">إيداع مقدم من عميل (له / دائن)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="transactionAmount">المبلغ:</label>
+              <input type="number" id="transactionAmount" min="1" step="any" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+              <label for="transactionNote">البيان / ملاحظات:</label>
+              <input type="text" id="transactionNote" placeholder="سبب الحركة المالية">
+            </div>
+          </div>
+          <button type="submit" class="btn-submit">تسجيل الحركة المالية</button>
+        </form>
+      </div>
+
+      <div class="card margin-top">
+        <h2>أرصدة العملاء الحالية</h2>
+        <div class="table-section">
+          <table>
+            <thead>
+              <tr>
+                <th>اسم العميل</th>
+                <th>له (دائن / مقدم)</th>
+                <th>عليه (مدين / آجل)</th>
+                <th>صافي الحساب</th>
+                <th>الحالة</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="clientsFinanceTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card margin-top">
+        <h2>سجل حركة الدرج والحسابات</h2>
+        <div class="table-section">
+          <table>
+            <thead>
+              <tr>
+                <th>التاريخ والوقت</th>
+                <th>الجهة / العميل</th>
+                <th>نوع الحركة</th>
+                <th>المبلغ</th>
+                <th>البيان</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="financialLogTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. واجهة سجل الخدمات -->
+    <div id="servicesView" class="view-section">
+      <div class="card">
+        <h2>إضافة خدمة جديدة</h2>
+        <form id="serviceForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="serviceClient">اسم العميل:</label>
+              <select id="serviceClient" required>
+                <option value="">-- اختر العميل --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="serviceName">اسم / نوع الخدمة:</label>
+              <input type="text" id="serviceName" placeholder="مثال: صيانة سيرفر / تجديد اشتراك" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="servicePrice">تكلفة الخدمة:</label>
+              <input type="number" id="servicePrice" min="0" step="any" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+              <label for="serviceStatus">حالة الخدمة:</label>
+              <select id="serviceStatus">
+                <option value="قيد التنفيذ">قيد التنفيذ</option>
+                <option value="مكتملة">مكتملة</option>
+                <option value="ملغاة">ملغاة</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn-submit">تسجيل الخدمة</button>
+        </form>
+      </div>
+
+      <div class="card margin-top">
+        <h2>قائمة الخدمات المسجلة</h2>
+        <div class="table-section">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>اسم العميل</th>
+                <th>اسم الخدمة</th>
+                <th>التكلفة</th>
+                <th>الحالة</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="servicesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. واجهة الإعدادات -->
+    <div id="settingsView" class="view-section">
+      <div class="card">
+        <h2>إعدادات النظام العامة</h2>
+        <form id="settingsForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="appNameInput">اسم النظام / المحل:</label>
+              <input type="text" id="appNameInput" value="نظام إدارة الخدمات">
+            </div>
+            <div class="form-group">
+              <label for="currencyInput">رمز العملة:</label>
+              <input type="text" id="currencyInput" value="ج.م">
+            </div>
+          </div>
+          <button type="submit" class="btn-submit">حفظ الإعدادات</button>
+        </form>
+      </div>
+
+      <div class="card margin-top">
+        <h2>إدارة البيانات والنسخ الاحتياطي</h2>
+        <div class="action-buttons">
+          <button class="btn-action btn-secondary" onclick="exportBackup()">📥 تصدير نسخة احتياطية (JSON)</button>
+          <button class="btn-action btn-danger" onclick="resetAllData()">⚠️ تصفير كافة بيانات النظام</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

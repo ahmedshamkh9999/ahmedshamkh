@@ -1,239 +1,291 @@
+:root {
+  --bg-main: #f4f6f9;
+  --sidebar-bg: #1e293b;
+  --sidebar-active: #3b82f6;
+  --card-bg: #ffffff;
+  --text-dark: #0f172a;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --border-color: #e2e8f0;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 body {
-  background-color: #f4f6f9;
+  background-color: var(--bg-main);
+  color: var(--text-dark);
+  overflow: hidden;
+  height: 100vh;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* شاشة تسجيل الدخول */
+.login-wrapper {
   display: flex;
-  min-height: 100vh;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-main);
 }
 
-/* القائمة الجانبية */
-.sidebar {
-  width: 240px;
-  background-color: #2c3e50;
-  color: #fff;
-  padding: 20px 0;
-  flex-shrink: 0;
-}
-
-.sidebar h2 {
+.login-card {
+  background: var(--card-bg);
+  padding: 32px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 360px;
   text-align: center;
-  font-size: 1.2rem;
-  margin-bottom: 25px;
-  padding: 0 10px 10px 10px;
-  border-bottom: 1px solid #34495e;
 }
 
-.sidebar ul {
-  list-style: none;
+.login-card h2 {
+  margin-bottom: 8px;
+  color: var(--primary);
 }
 
-.sidebar ul li a {
-  display: block;
-  padding: 12px 20px;
-  color: #ecf0f1;
-  text-decoration: none;
-  transition: background 0.2s;
+.login-card p {
+  margin-bottom: 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
-.sidebar ul li a:hover,
-.sidebar ul li a.active {
-  background-color: #34495e;
-  border-right: 4px solid #2ecc71;
+.login-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* المحتوى الرئيسي */
-.main-content {
-  flex: 1;
-  padding: 30px;
-}
-
-.view-section {
+.error-msg {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin-top: 12px;
   display: none;
 }
 
-.view-section.active {
-  display: block !important;
-}
-
-.margin-top {
-  margin-top: 25px;
-}
-
-.header-banner {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 25px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-/* الكروت الإحصائية */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-}
-
-.stat-card {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  border-top: 4px solid #3498db;
-}
-
-.border-green { border-top-color: #2ecc71; }
-.border-red { border-top-color: #e74c3c; }
-.border-blue { border-top-color: #3498db; }
-
-.text-green { color: #2ecc71; }
-.text-red { color: #e74c3c; }
-.text-blue { color: #3498db; }
-
-.stat-title {
-  color: #7f8c8d;
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-/* النماذج والجداول */
-.card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  padding: 25px;
-}
-
-.card h2 {
-  color: #2c3e50;
-  margin-bottom: 20px;
-  font-size: 1.2rem;
-  border-bottom: 2px solid #f4f6f9;
-  padding-bottom: 10px;
-}
-
-.form-row {
+/* التطبيق الرئيسي */
+.app-wrapper {
   display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
+  height: 100vh;
 }
 
-.form-group {
-  flex: 1;
-  min-width: 200px;
-  margin-bottom: 15px;
+.sidebar {
+  width: 260px;
+  background-color: var(--sidebar-bg);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
 }
 
-.form-group label {
-  display: block;
+.sidebar-header {
+  padding: 24px;
+  font-size: 1.4rem;
   font-weight: bold;
-  margin-bottom: 6px;
-  font-size: 14px;
+  border-bottom: 1px solid #334155;
+  text-align: center;
+  color: #38bdf8;
 }
 
-.form-group input,
-.form-group select {
+.nav-list {
+  list-style: none;
+  padding: 16px 8px;
+  flex: 1;
+}
+
+.nav-item {
+  margin-bottom: 8px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #94a3b8;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  background-color: #334155;
+  color: #fff;
+}
+
+.nav-link.active {
+  background-color: var(--sidebar-active);
+  color: #fff;
+  font-weight: bold;
+}
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid #334155;
+}
+
+.btn-logout {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
 }
 
-.btn-submit {
-  width: 100%;
-  padding: 12px;
-  background-color: #2ecc71;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 15px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-submit:hover {
-  background-color: #27ae60;
-}
-
-.action-buttons {
+.main-content {
+  flex: 1;
   display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
-.btn-action {
-  padding: 10px 20px;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.top-bar {
+  background: var(--card-bg);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-title {
+  font-size: 1.25rem;
   font-weight: bold;
 }
 
-.btn-secondary { background-color: #3498db; }
-.btn-danger { background-color: #e74c3c; }
+.content-area {
+  padding: 24px;
+  flex: 1;
+}
 
-/* الجدول والشارات وأزرار الحذف */
-.table-section {
-  overflow-x: auto;
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.card-title {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.card-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.drawer-text { color: var(--primary); }
+.danger-text { color: var(--danger); }
+.success-text { color: var(--success); }
+
+.section-view {
+  display: none;
+}
+
+.section-view.active {
+  display: block;
+}
+
+.form-container {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 24px;
+}
+
+.form-container h3 {
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+input, select, button {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+input:focus, select:focus {
+  border-color: var(--primary);
+}
+
+button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.btn-danger { background: var(--danger); }
+.btn-success { background: var(--success); }
+
+.btn-small {
+  padding: 4px 8px;
+  font-size: 0.75rem;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
+  background: var(--card-bg);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+th, td {
+  padding: 12px 16px;
+  text-align: right;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
 }
 
 th {
-  background-color: #34495e;
-  color: white;
-  padding: 12px;
-  font-size: 14px;
-}
-
-td {
-  padding: 10px;
-  text-align: center;
-  border-bottom: 1px solid #eee;
-  font-size: 14px;
+  background-color: #f8fafc;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .badge {
   padding: 4px 8px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: bold;
 }
 
-.badge-green { background-color: #e8f8f5; color: #2ecc71; }
-.badge-red { background-color: #fadbd8; color: #e74c3c; }
-.badge-yellow { background-color: #fef9e7; color: #f39c12; }
-.badge-gray { background-color: #ebedef; color: #7f8c8d; }
-
-.btn-delete {
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background 0.2s;
-}
-
-.btn-delete:hover {
-  background-color: #c0392b;
-}
+.badge-success { background: #dcfce7; color: #166534; }
+.badge-danger { background: #fee2e2; color: #991b1b; }
+.badge-warning { background: #fef3c7; color: #92400e; }

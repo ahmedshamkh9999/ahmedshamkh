@@ -1,371 +1,279 @@
-// البيانات الأساسية للنظام
-let drawerBalance = parseFloat(localStorage.getItem('drawerBalance')) || 0;
-let clients = JSON.parse(localStorage.getItem('clients')) || [];
-let financialLogs = JSON.parse(localStorage.getItem('financialLogs')) || [];
-let services = JSON.parse(localStorage.getItem('services')) || [];
-let currencySymbol = localStorage.getItem('currencySymbol') || 'ج.م';
-let appName = localStorage.getItem('appName') || 'نظام إدارة الخدمات';
+// البيانات المعتمدة لتسجيل الدخول
+const AUTH_USER = "admin";
+const AUTH_PASS = "1234";
 
-// حفظ البيانات تلقائياً في المتصفح
-function saveData() {
-  localStorage.setItem('drawerBalance', drawerBalance);
-  localStorage.setItem('clients', JSON.stringify(clients));
-  localStorage.setItem('financialLogs', JSON.stringify(financialLogs));
-  localStorage.setItem('services', JSON.stringify(services));
-  localStorage.setItem('currencySymbol', currencySymbol);
-  localStorage.setItem('appName', appName);
-}
+// حالة بيانات النظام
+let state = {
+  drawerBalance: parseFloat(localStorage.getItem('br_drawer')) || 0,
+  logs: JSON.parse(localStorage.getItem('br_logs')) || [],
+  services: JSON.parse(localStorage.getItem('br_services')) || [],
+  debtors: JSON.parse(localStorage.getItem('br_debtors')) || [],
+  creditors: JSON.parse(localStorage.getItem('br_creditors')) || []
+};
 
-// التنقل بين الأقسام
-function switchTab(event, targetViewId) {
-  if (event) event.preventDefault();
+// ---------------- نظام تسجيل الدخول ----------------
 
-  const targetView = document.getElementById(targetViewId);
-  if (!targetView) return;
-
-  document.querySelectorAll('.view-section').forEach(view => {
-    view.classList.remove('active');
-  });
-
-  document.querySelectorAll('.nav-link').forEach(link => {
-    link.classList.remove('active');
-  });
-
-  targetView.classList.add('active');
-
-  if (event && event.currentTarget) {
-    event.currentTarget.classList.add('active');
-  }
-}
-
-// 1. تسجيل عميل جديد
-document.getElementById('registrationForm').addEventListener('submit', function (e) {
+document.getElementById('loginForm').addEventListener('submit', (e) => {
   e.preventDefault();
+  const user = document.getElementById('usernameInput').value.trim();
+  const pass = document.getElementById('passwordInput').value.trim();
+  const errorMsg = document.getElementById('loginError');
 
-  const clientName = document.getElementById('clientName').value.trim();
-  const serviceNumber = document.getElementById('serviceNumber').value.trim();
-  const accountType = document.getElementById('accountType').value;
-
-  if (clients.some(c => c.name === clientName)) {
-    alert('اسم العميل موجود بالفعل!');
-    return;
+  if (user === AUTH_USER && pass === AUTH_PASS) {
+    sessionStorage.setItem('isLoggedIn', 'true');
+    errorMsg.style.display = 'none';
+    e.target.reset();
+    checkAuth();
+  } else {
+    errorMsg.style.display = 'block';
   }
-
-  const newClient = {
-    id: Date.now(),
-    name: clientName,
-    serviceNumber: serviceNumber,
-    type: accountType,
-    credit: 0,
-    debit: 0
-  };
-
-  clients.push(newClient);
-  saveData();
-  refreshUI();
-
-  document.getElementById('registrationForm').reset();
 });
 
-// تحديث اختيار العملاء القوائم
-function updateClientsDropdowns() {
-  const dropdowns = [
-    document.getElementById('transactionClient'),
-    document.getElementById('serviceClient')
-  ];
-
-  dropdowns.forEach(select => {
-    if (!select) return;
-    select.innerHTML = '<option value="">-- اختر العميل --</option>';
-    clients.forEach(client => {
-      const option = document.createElement('option');
-      option.value = client.id;
-      option.textContent = client.name;
-      select.appendChild(option);
-    });
-  });
+function logout() {
+  if (confirm('هل أنت تأكد من تسجيل الخروج؟')) {
+    sessionStorage.removeItem('isLoggedIn');
+    checkAuth();
+  }
 }
 
-// 2. تسجيل حركة مالية
-document.getElementById('financialForm').addEventListener('submit', function (e) {
-  e.preventDefault();
+function checkAuth() {
+  const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+  const loginSec = document.getElementById('loginSection');
+  const appSec = document.getElementById('appSection');
 
-  const clientId = document.getElementById('transactionClient').value;
-  const type = document.getElementById('transactionType').value;
-  const amount = parseFloat(document.getElementById('transactionAmount').value);
-  const note = document.getElementById('transactionNote').value || 'بدون ملاحظات';
-
-  if (type !== 'deposit' && !clientId) {
-    alert('يرجى اختيار العميل أولاً!');
-    return;
+  if (isLoggedIn) {
+    loginSec.classList.add('hidden');
+    appSec.classList.remove('hidden');
+    renderUI();
+  } else {
+    loginSec.classList.remove('hidden');
+    appSec.classList.add('hidden');
   }
+}
 
-  let client = clients.find(c => c.id == clientId);
-  let typeText = '';
+// ---------------- منطق إدارة النظام ----------------
 
-  if (type === 'deposit') {
-    drawerBalance += amount;
-    typeText = 'إيداع مباشر للدرج';
-  } else if (type === 'pay_debt') {
-    drawerBalance += amount;
-    if (client.debit >= amount) {
-      client.debit -= amount;
-    } else {
-      const diff = amount - client.debit;
-      client.debit = 0;
-      client.credit += diff;
-    }
-    typeText = `سداد دين (${client.name})`;
-  } else if (type === 'add_debt') {
-    client.debit += amount;
-    typeText = `تسجيل دين (${client.name})`;
-  } else if (type === 'add_credit') {
-    drawerBalance += amount;
-    client.credit += amount;
-    typeText = `إيداع مقدم (${client.name})`;
-  }
+function saveState() {
+  localStorage.setItem('br_drawer', state.drawerBalance);
+  localStorage.setItem('br_logs', JSON.stringify(state.logs));
+  localStorage.setItem('br_services', JSON.stringify(state.services));
+  localStorage.setItem('br_debtors', JSON.stringify(state.debtors));
+  localStorage.setItem('br_creditors', JSON.stringify(state.creditors));
+  renderUI();
+}
 
-  financialLogs.unshift({
+function switchTab(e, tabId) {
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+  
+  e.currentTarget.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+  document.getElementById('pageTitle').textContent = e.currentTarget.textContent;
+}
+
+function addLog(type, amount, note) {
+  if (type === 'in') state.drawerBalance += amount;
+  if (type === 'out') state.drawerBalance -= amount;
+
+  state.logs.unshift({
     id: Date.now(),
-    date: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-    clientName: client ? client.name : 'الدرج العام',
-    type: typeText,
+    time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+    type: type,
     amount: amount,
     note: note
   });
+}
 
-  saveData();
-  refreshUI();
-
-  document.getElementById('financialForm').reset();
-});
-
-// 3. إضافة خدمة جديدة
-document.getElementById('serviceForm').addEventListener('submit', function (e) {
+// 1. حركة الدرج
+document.getElementById('drawerForm').addEventListener('submit', (e) => {
   e.preventDefault();
+  const type = document.getElementById('drawerTxType').value;
+  const amount = parseFloat(document.getElementById('drawerTxAmount').value);
+  const note = document.getElementById('drawerTxNote').value;
 
-  const clientId = document.getElementById('serviceClient').value;
-  const serviceName = document.getElementById('serviceName').value.trim();
-  const price = parseFloat(document.getElementById('servicePrice').value);
-  const status = document.getElementById('serviceStatus').value;
-
-  const client = clients.find(c => c.id == clientId);
-
-  const newService = {
-    id: Date.now(),
-    clientName: client ? client.name : 'غير معروف',
-    serviceName: serviceName,
-    price: price,
-    status: status
-  };
-
-  services.push(newService);
-  saveData();
-  refreshUI();
-
-  document.getElementById('serviceForm').reset();
+  addLog(type, amount, note);
+  saveState();
+  e.target.reset();
 });
 
-// ------------ عمليات الحذف ------------ //
+// 2. أرقام الخدمة
+document.getElementById('serviceForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const num = document.getElementById('serviceNumInput').value;
+  const client = document.getElementById('serviceClientInput').value;
+  const cost = parseFloat(document.getElementById('serviceCostInput').value);
+  const status = document.getElementById('servicePaymentStatus').value;
 
-// حذف عميل
-function deleteClient(id) {
-  if (confirm('هل أنت تأكد من حذف هذا العميل؟')) {
-    clients = clients.filter(c => c.id !== id);
-    saveData();
-    refreshUI();
+  if (status === 'paid') {
+    addLog('in', cost, `تحصيل خدمة (${num}) - العميل: ${client}`);
+  } else if (status === 'debtor') {
+    state.debtors.push({ id: Date.now(), name: client, amount: cost, reason: `خدمة رقم ${num}` });
+  } else if (status === 'creditor' || status === 'debt') {
+    state.creditors.push({ id: Date.now(), name: client, amount: cost, reason: `خدمة رقم ${num}` });
+  }
+
+  state.services.unshift({ id: Date.now(), num, client, cost, status });
+  saveState();
+  e.target.reset();
+});
+
+// 3. مدينون
+document.getElementById('debtorForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = document.getElementById('debtorName').value;
+  const amount = parseFloat(document.getElementById('debtorAmount').value);
+  const reason = document.getElementById('debtorReason').value;
+
+  state.debtors.push({ id: Date.now(), name, amount, reason });
+  saveState();
+  e.target.reset();
+});
+
+function payDebtor(id) {
+  const debtor = state.debtors.find(d => d.id === id);
+  if (!debtor) return;
+
+  const payAmount = parseFloat(prompt(`سداد دين لـ (${debtor.name})\nالمبلغ المتبقي: ${debtor.amount} ج.م\nأدخل مبلغ السداد:`, debtor.amount));
+  if (payAmount > 0 && payAmount <= debtor.amount) {
+    debtor.amount -= payAmount;
+    addLog('out', payAmount, `سداد دين لـ: ${debtor.name}`);
+
+    if (debtor.amount === 0) {
+      state.debtors = state.debtors.filter(d => d.id !== id);
+    }
+    saveState();
   }
 }
 
-// حذف حركة مالية من السجل
-function deleteFinancialLog(id) {
-  if (confirm('هل أنت تأكد من حذف هذه الحركة المالية من السجل؟')) {
-    financialLogs = financialLogs.filter(log => log.id !== id);
-    saveData();
-    refreshUI();
+// 4. دائنون
+document.getElementById('creditorForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = document.getElementById('creditorName').value;
+  const amount = parseFloat(document.getElementById('creditorAmount').value);
+  const reason = document.getElementById('creditorReason').value;
+
+  state.creditors.push({ id: Date.now(), name, amount, reason });
+  saveState();
+  e.target.reset();
+});
+
+function collectCreditor(id) {
+  const creditor = state.creditors.find(c => c.id === id);
+  if (!creditor) return;
+
+  const collectAmount = parseFloat(prompt(`تحصيل مبلغ من (${creditor.name})\nالمبلغ المستحق: ${creditor.amount} ج.م\nأدخل المبلغ المحصل:`, creditor.amount));
+  if (collectAmount > 0 && collectAmount <= creditor.amount) {
+    creditor.amount -= collectAmount;
+    addLog('in', collectAmount, `تحصيل مستحق من: ${creditor.name}`);
+
+    if (creditor.amount === 0) {
+      state.creditors = state.creditors.filter(c => c.id !== id);
+    }
+    saveState();
   }
 }
 
-// حذف خدمة
+function deleteLog(id) {
+  if (confirm('حذف هذه الحركة؟ (لن تتأثر بقية الجداول)')) {
+    const log = state.logs.find(l => l.id === id);
+    if (log) {
+      if (log.type === 'in') state.drawerBalance -= log.amount;
+      if (log.type === 'out') state.drawerBalance += log.amount;
+      state.logs = state.logs.filter(l => l.id !== id);
+      saveState();
+    }
+  }
+}
+
 function deleteService(id) {
   if (confirm('هل أنت تأكد من حذف هذه الخدمة؟')) {
-    services = services.filter(s => s.id !== id);
-    saveData();
-    refreshUI();
+    state.services = state.services.filter(s => s.id !== id);
+    saveState();
   }
 }
 
-// ------------ إعدادات وإدارة البيانات ------------ //
+// ---------------- تحديث الواجهة وحساب الأرباح ----------------
+function renderUI() {
+  // رصيد الدرج
+  document.getElementById('drawerDisplay').textContent = `${state.drawerBalance.toFixed(2)} ج.م`;
 
-document.getElementById('settingsForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-  appName = document.getElementById('appNameInput').value.trim() || 'نظام إدارة الخدمات';
-  currencySymbol = document.getElementById('currencyInput').value.trim() || 'ج.م';
+  // 1. حساب إجمالي الإيرادات (مجموع القيم الكلية لجميع الخدمات)
+  const totalRevenues = state.services.reduce((sum, item) => sum + item.cost, 0);
+  document.getElementById('totalRevenuesDisplay').textContent = `${totalRevenues.toFixed(2)} ج.م`;
 
-  saveData();
-  refreshUI();
-  alert('تم حفظ الإعدادات بنجاح!');
-});
+  // 2. حساب إجمالي المصروفات والسحوبات من الدرج
+  const totalExpenses = state.logs
+    .filter(log => log.type === 'out')
+    .reduce((sum, log) => sum + log.amount, 0);
 
-function exportBackup() {
-  const data = { drawerBalance, clients, financialLogs, services, currencySymbol, appName };
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `backup_${Date.now()}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-}
+  // 3. حساب صافي الربح (الإيرادات - المصروفات)
+  const netProfit = totalRevenues - totalExpenses;
+  const netProfitEl = document.getElementById('netProfitDisplay');
+  netProfitEl.textContent = `${netProfit.toFixed(2)} ج.م`;
+  netProfitEl.className = `card-value ${netProfit >= 0 ? 'success-text' : 'danger-text'}`;
 
-function resetAllData() {
-  if (confirm('هل أنت تأكد من تصفير كافة بيانات النظام؟ لا يمكن التراجع عن هذا الإجراء.')) {
-    localStorage.clear();
-    drawerBalance = 0;
-    clients = [];
-    financialLogs = [];
-    services = [];
-    currencySymbol = 'ج.م';
-    appName = 'نظام إدارة الخدمات';
+  // حساب إجمالي المدينين والدائنين
+  const totalDebtors = state.debtors.reduce((sum, item) => sum + item.amount, 0);
+  document.getElementById('totalDebtorsDisplay').textContent = `${totalDebtors.toFixed(2)} ج.م`;
 
-    refreshUI();
-    alert('تم تصفير كل بيانات النظام.');
-  }
-}
+  const totalCreditors = state.creditors.reduce((sum, item) => sum + item.amount, 0);
+  document.getElementById('totalCreditorsDisplay').textContent = `${totalCreditors.toFixed(2)} ج.م`;
 
-// ------------ تحديث الواجهات والجداول ------------ //
-
-function refreshUI() {
-  document.getElementById('sidebarTitle').textContent = appName;
-  document.getElementById('currencyInput').value = currencySymbol;
-  document.getElementById('appNameInput').value = appName;
-
-  updateClientsDropdowns();
-  renderAccountsTable();
-  renderClientsFinanceTable();
-  renderFinancialLogs();
-  renderServicesTable();
-  updateFinancialSummary();
-  updateDashboardStats();
-}
-
-function updateFinancialSummary() {
-  let totalDebit = 0;
-  let totalCredit = 0;
-
-  clients.forEach(c => {
-    totalDebit += c.debit;
-    totalCredit += c.credit;
-  });
-
-  document.getElementById('drawerBalance').textContent = `${drawerBalance.toFixed(2)} ${currencySymbol}`;
-  document.getElementById('totalDebit').textContent = `${totalDebit.toFixed(2)} ${currencySymbol}`;
-  document.getElementById('totalCredit').textContent = `${totalCredit.toFixed(2)} ${currencySymbol}`;
-  document.getElementById('dashboardDrawer').textContent = `${drawerBalance.toFixed(2)} ${currencySymbol}`;
-}
-
-function renderClientsFinanceTable() {
-  const tbody = document.getElementById('clientsFinanceTableBody');
-  if (clients.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="color: #888;">لا يوجد عملاء مسجلون حالياً</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = '';
-  clients.forEach(c => {
-    const net = c.credit - c.debit;
-    let badge = net > 0 
-      ? `<span class="badge badge-green">له رصيد (${net.toFixed(2)})</span>` 
-      : net < 0 
-      ? `<span class="badge badge-red">عليه دين (${Math.abs(net).toFixed(2)})</span>` 
-      : `<span class="badge badge-gray">خالص الحساب</span>`;
-
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td><strong>${c.name}</strong></td>
-      <td class="text-blue">${c.credit.toFixed(2)} ${currencySymbol}</td>
-      <td class="text-red">${c.debit.toFixed(2)} ${currencySymbol}</td>
-      <td><strong>${net.toFixed(2)} ${currencySymbol}</strong></td>
-      <td>${badge}</td>
-      <td><button class="btn-delete" onclick="deleteClient(${c.id})">حذف العميل</button></td>
-    `;
-    tbody.appendChild(row);
-  });
-}
-
-function renderFinancialLogs() {
-  const tbody = document.getElementById('financialLogTableBody');
-  if (financialLogs.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="color: #888;">لا توجد حركات مالية مسجلة</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = '';
-  financialLogs.forEach(log => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${log.date}</td>
-      <td>${log.clientName}</td>
-      <td>${log.type}</td>
-      <td><strong>${log.amount.toFixed(2)} ${currencySymbol}</strong></td>
+  // عرض جدول حركة الدرج
+  document.getElementById('drawerTableBody').innerHTML = state.logs.map(log => `
+    <tr>
+      <td>${log.time}</td>
+      <td><span class="badge ${log.type === 'in' ? 'badge-success' : 'badge-danger'}">${log.type === 'in' ? 'إيداع (+)' : 'سحب (-)'}</span></td>
+      <td><strong>${log.amount.toFixed(2)} ج.م</strong></td>
       <td>${log.note}</td>
-      <td><button class="btn-delete" onclick="deleteFinancialLog(${log.id})">حذف</button></td>
+      <td><button class="btn-danger btn-small" onclick="deleteLog(${log.id})">حذف</button></td>
+    </tr>
+  `).join('');
+
+  // عرض جدول الخدمات
+  document.getElementById('servicesTableBody').innerHTML = state.services.map(s => {
+    let badgeClass = 'badge-success';
+    let badgeText = 'محصل بالدرج';
+
+    if (s.status === 'debtor') {
+      badgeClass = 'badge-danger';
+      badgeText = 'مستحق (مدينون)';
+    } else if (s.status === 'creditor' || s.status === 'debt') {
+      badgeClass = 'badge-warning';
+      badgeText = 'مستحق (دائنون)';
+    }
+
+    return `
+      <tr>
+        <td><strong>${s.num}</strong></td>
+        <td>${s.client}</td>
+        <td>${s.cost.toFixed(2)} ج.م</td>
+        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+        <td><button class="btn-danger btn-small" onclick="deleteService(${s.id})">حذف</button></td>
+      </tr>
     `;
-    tbody.appendChild(row);
-  });
+  }).join('');
+
+  // عرض جدول مدينون
+  document.getElementById('debtorsTableBody').innerHTML = state.debtors.map(d => `
+    <tr>
+      <td><strong>${d.name}</strong></td>
+      <td class="danger-text" style="font-weight: bold;">${d.amount.toFixed(2)} ج.م</td>
+      <td>${d.reason}</td>
+      <td><button class="btn-success" onclick="payDebtor(${d.id})">سداد من الدرج</button></td>
+    </tr>
+  `).join('');
+
+  // عرض جدول دائنون
+  document.getElementById('creditorsTableBody').innerHTML = state.creditors.map(c => `
+    <tr>
+      <td><strong>${c.name}</strong></td>
+      <td class="success-text" style="font-weight: bold;">${c.amount.toFixed(2)} ج.م</td>
+      <td>${c.reason}</td>
+      <td><button class="btn-success" onclick="collectCreditor(${c.id})">تحصيل للدرج</button></td>
+    </tr>
+  `).join('');
 }
 
-function renderServicesTable() {
-  const tbody = document.getElementById('servicesTableBody');
-  if (services.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="color: #888;">لا توجد خدمات مسجلة</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = '';
-  services.forEach((s, index) => {
-    let statusClass = 'badge-yellow';
-    if (s.status === 'مكتملة') statusClass = 'badge-green';
-    if (s.status === 'ملغاة') statusClass = 'badge-red';
-
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${index + 1}</td>
-      <td><strong>${s.clientName}</strong></td>
-      <td>${s.serviceName}</td>
-      <td>${s.price.toFixed(2)} ${currencySymbol}</td>
-      <td><span class="badge ${statusClass}">${s.status}</span></td>
-      <td><button class="btn-delete" onclick="deleteService(${s.id})">حذف</button></td>
-    `;
-    tbody.appendChild(row);
-  });
-}
-
-function renderAccountsTable() {
-  const tbody = document.getElementById('accountsTableBody');
-  if (clients.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="color: #888;">لا يوجد حسابات مسجلة</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = '';
-  clients.forEach((c, index) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${index + 1}</td>
-      <td>${c.name}</td>
-      <td>${c.serviceNumber}</td>
-      <td>${c.type}</td>
-      <td><button class="btn-delete" onclick="deleteClient(${c.id})">حذف</button></td>
-    `;
-    tbody.appendChild(row);
-  });
-}
-
-function updateDashboardStats() {
-  document.getElementById('totalClientsCount').textContent = clients.length;
-  document.getElementById('totalServicesCount').textContent = services.length;
-}
-
-// تشغيل النظام عند تحميل الصفحة
-window.onload = refreshUI;
+// التحقق من الجلسة عند تحميل الصفحة
+checkAuth();

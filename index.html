@@ -35,6 +35,9 @@
           <a class="nav-link" onclick="switchTab(event, 'servicesTab')">أرقام الخدمة</a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" onclick="switchTab(event, 'reportsTab')">الأرباح والإيرادات</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" onclick="switchTab(event, 'debtorsTab')">مدينون (ديون علينا)</a>
         </li>
         <li class="nav-item">
@@ -54,20 +57,12 @@
 
       <div class="content-area">
 
-        <!-- 1. قسم يومية الحساب (الدرج) والأرباح -->
+        <!-- 1. قسم يومية الحساب (الدرج) -->
         <div id="drawerTab" class="section-view active">
           <div class="grid-cards">
             <div class="card">
               <div class="card-title">رصيد الدرج الحالي</div>
               <div class="card-value drawer-text" id="drawerDisplay">0.00 ج.م</div>
-            </div>
-            <div class="card">
-              <div class="card-title">إجمالي إيرادات الخدمات</div>
-              <div class="card-value success-text" id="totalRevenuesDisplay">0.00 ج.م</div>
-            </div>
-            <div class="card">
-              <div class="card-title">صافي الأرباح (الإيرادات - المصروفات)</div>
-              <div class="card-value drawer-text" id="netProfitDisplay">0.00 ج.م</div>
             </div>
             <div class="card">
               <div class="card-title">إجمالي المدينون (ديون علينا)</div>
@@ -137,7 +132,25 @@
           </table>
         </div>
 
-        <!-- 3. قسم مدينون -->
+        <!-- 3. قسم الأرباح والإيرادات (الزر الجديد) -->
+        <div id="reportsTab" class="section-view">
+          <div class="grid-cards">
+            <div class="card">
+              <div class="card-title">إجمالي إيرادات الخدمات</div>
+              <div class="card-value success-text" id="totalRevenuesDisplay">0.00 ج.م</div>
+            </div>
+            <div class="card">
+              <div class="card-title">إجمالي المصروفات والسحوبات</div>
+              <div class="card-value danger-text" id="totalExpensesDisplay">0.00 ج.م</div>
+            </div>
+            <div class="card">
+              <div class="card-title">صافي الأرباح (الإيرادات - المصروفات)</div>
+              <div class="card-value drawer-text" id="netProfitDisplay">0.00 ج.م</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. قسم مدينون -->
         <div id="debtorsTab" class="section-view">
           <div class="form-container">
             <h3>تسجيل مستحق علينا (مدينون)</h3>
@@ -162,7 +175,7 @@
           </table>
         </div>
 
-        <!-- 4. قسم دائنون -->
+        <!-- 5. قسم دائنون -->
         <div id="creditorsTab" class="section-view">
           <div class="form-container">
             <h3>تسجيل مبلغ لنا عند عميل/جهة (دائنون)</h3>

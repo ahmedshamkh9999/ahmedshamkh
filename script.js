@@ -84,7 +84,7 @@ function addLog(type, amount, note) {
   });
 }
 
-// 1. حركة الدرج
+// 1. حركة الدرج المباشرة
 document.getElementById('drawerForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const type = document.getElementById('drawerTxType').value;
@@ -197,14 +197,15 @@ function renderUI() {
   // رصيد الدرج
   document.getElementById('drawerDisplay').textContent = `${state.drawerBalance.toFixed(2)} ج.م`;
 
-  // 1. حساب إجمالي الإيرادات (مجموع القيم الكلية لجميع الخدمات)
+  // 1. حساب إجمالي الإيرادات (مجموع القيم لجميع الخدمات)
   const totalRevenues = state.services.reduce((sum, item) => sum + item.cost, 0);
   document.getElementById('totalRevenuesDisplay').textContent = `${totalRevenues.toFixed(2)} ج.م`;
 
-  // 2. حساب إجمالي المصروفات والسحوبات من الدرج
+  // 2. حساب إجمالي المصروفات والسحوبات من اليومية
   const totalExpenses = state.logs
     .filter(log => log.type === 'out')
     .reduce((sum, log) => sum + log.amount, 0);
+  document.getElementById('totalExpensesDisplay').textContent = `${totalExpenses.toFixed(2)} ج.م`;
 
   // 3. حساب صافي الربح (الإيرادات - المصروفات)
   const netProfit = totalRevenues - totalExpenses;

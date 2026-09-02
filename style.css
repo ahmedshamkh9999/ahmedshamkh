@@ -303,6 +303,8 @@ button:active {
   flex-direction: column;
   overflow-y: auto;
   background-color: var(--bg-main);
+  background: linear-gradient(rgba(248, 250, 252, 0.92), rgba(248, 250, 252, 0.92)), 
+              url('فوري.jpeg') center/cover no-repeat fixed;
 }
 
 .top-bar {

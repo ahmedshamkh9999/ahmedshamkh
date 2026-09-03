@@ -30,10 +30,21 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
 });
 
 function logout() {
-  if (confirm('هل أنت تأكد من تسجيل الخروج؟')) {
-    sessionStorage.removeItem('isLoggedIn');
-    checkAuth();
-  }
+  Swal.fire({
+    title: 'تسجيل الخروج',
+    text: 'هل أنت تأكد من تسجيل الخروج؟',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'نعم، خروج',
+    cancelButtonText: 'إلغاء'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      sessionStorage.removeItem('isLoggedIn');
+      checkAuth();
+    }
+  });
 }
 
 function checkAuth() {
@@ -133,16 +144,41 @@ function payDebtor(id) {
   const debtor = state.debtors.find(d => d.id === id);
   if (!debtor) return;
 
-  const payAmount = parseFloat(prompt(`سداد دين لـ (${debtor.name})\nالمبلغ المتبقي: ${debtor.amount} ج.م\nأدخل مبلغ السداد:`, debtor.amount));
-  if (payAmount > 0 && payAmount <= debtor.amount) {
-    debtor.amount -= payAmount;
-    addLog('out', payAmount, `سداد دين لـ: ${debtor.name}`);
-
-    if (debtor.amount === 0) {
-      state.debtors = state.debtors.filter(d => d.id !== id);
+  Swal.fire({
+    title: `سداد دين لـ (${debtor.name})`,
+    text: `المبلغ المتبقي: ${debtor.amount} ج.م`,
+    input: 'number',
+    inputValue: debtor.amount,
+    inputAttributes: {
+      min: '0.01',
+      max: debtor.amount,
+      step: 'any'
+    },
+    showCancelButton: true,
+    confirmButtonText: 'سداد',
+    cancelButtonText: 'إلغاء',
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#64748b',
+    inputValidator: (value) => {
+      const val = parseFloat(value);
+      if (!val || val <= 0 || val > debtor.amount) {
+        return `يرجى إدخال مبلغ صحيح حتى ${debtor.amount} ج.م`;
+      }
     }
-    saveState();
-  }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const payAmount = parseFloat(result.value);
+      if (payAmount > 0 && payAmount <= debtor.amount) {
+        debtor.amount -= payAmount;
+        addLog('out', payAmount, `سداد دين لـ: ${debtor.name}`);
+
+        if (debtor.amount === 0) {
+          state.debtors = state.debtors.filter(d => d.id !== id);
+        }
+        saveState();
+      }
+    }
+  });
 }
 
 // 4. دائنون
@@ -161,35 +197,82 @@ function collectCreditor(id) {
   const creditor = state.creditors.find(c => c.id === id);
   if (!creditor) return;
 
-  const collectAmount = parseFloat(prompt(`تحصيل مبلغ من (${creditor.name})\nالمبلغ المستحق: ${creditor.amount} ج.م\nأدخل المبلغ المحصل:`, creditor.amount));
-  if (collectAmount > 0 && collectAmount <= creditor.amount) {
-    creditor.amount -= collectAmount;
-    addLog('in', collectAmount, `تحصيل مستحق من: ${creditor.name}`);
-
-    if (creditor.amount === 0) {
-      state.creditors = state.creditors.filter(c => c.id !== id);
+  Swal.fire({
+    title: `تحصيل مبلغ من (${creditor.name})`,
+    text: `المبلغ المستحق: ${creditor.amount} ج.م`,
+    input: 'number',
+    inputValue: creditor.amount,
+    inputAttributes: {
+      min: '0.01',
+      max: creditor.amount,
+      step: 'any'
+    },
+    showCancelButton: true,
+    confirmButtonText: 'تحصيل',
+    cancelButtonText: 'إلغاء',
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#64748b',
+    inputValidator: (value) => {
+      const val = parseFloat(value);
+      if (!val || val <= 0 || val > creditor.amount) {
+        return `يرجى إدخال مبلغ صحيح حتى ${creditor.amount} ج.م`;
+      }
     }
-    saveState();
-  }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const collectAmount = parseFloat(result.value);
+      if (collectAmount > 0 && collectAmount <= creditor.amount) {
+        creditor.amount -= collectAmount;
+        addLog('in', collectAmount, `تحصيل مستحق من: ${creditor.name}`);
+
+        if (creditor.amount === 0) {
+          state.creditors = state.creditors.filter(c => c.id !== id);
+        }
+        saveState();
+      }
+    }
+  });
 }
 
 function deleteLog(id) {
-  if (confirm('حذف هذه الحركة؟ (لن تتأثر بقية الجداول)')) {
-    const log = state.logs.find(l => l.id === id);
-    if (log) {
-      if (log.type === 'in') state.drawerBalance -= log.amount;
-      if (log.type === 'out') state.drawerBalance += log.amount;
-      state.logs = state.logs.filter(l => l.id !== id);
-      saveState();
+  Swal.fire({
+    title: 'حذف الحركة',
+    text: 'حذف هذه الحركة؟ (لن تتأثر بقية الجداول)',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'نعم، احذف',
+    cancelButtonText: 'إلغاء'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const log = state.logs.find(l => l.id === id);
+      if (log) {
+        if (log.type === 'in') state.drawerBalance -= log.amount;
+        if (log.type === 'out') state.drawerBalance += log.amount;
+        state.logs = state.logs.filter(l => l.id !== id);
+        saveState();
+      }
     }
-  }
+  });
 }
 
 function deleteService(id) {
-  if (confirm('هل أنت تأكد من حذف هذه الخدمة؟')) {
-    state.services = state.services.filter(s => s.id !== id);
-    saveState();
-  }
+  Swal.fire({
+    title: 'حذف الخدمة',
+    text: 'هل أنت تأكد من حذف هذه الخدمة؟',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'نعم، احذف',
+    cancelButtonText: 'إلغاء'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      state.services = state.services.filter(s => s.id !== id);
+      saveState();
+    }
+  });
 }
 
 // ---------------- تحديث الواجهة وحساب الأرباح ----------------

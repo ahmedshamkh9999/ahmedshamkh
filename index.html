@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام الفرع</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="فوري.jpeg" type="image/png">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+  <!-- شاشة تسجيل الدخول -->
+  <div id="loginSection" class="login-wrapper">
+    <div class="login-card">
+      <img src="فوري.jpeg" alt="لوجو الفرع" class="login-logo" onerror="this.style.display='none'">
+      <h2>نظام الفرع</h2>
+      <p>welcom to system The Branch</p>
+      <p>لتواصل دعم:01040810091</p>
+      <form id="loginForm">
+        <input type="text" id="usernameInput" placeholder="اسم المستخدم" required>
+        <input type="password" id="passwordInput" placeholder="كلمة المرور" required>
+        <button type="submit">تسجيل الدخول</button>
+      </form>
+      <div id="loginError" class="error-msg">اسم المستخدم أو كلمة المرور غير صحيحة</div>
+    </div>
+  </div>
+
+  <!-- التطبيق الرئيسي -->
+  <div id="appSection" class="app-wrapper hidden">
+    <!-- القائمة الجانبية -->
+    <div class="sidebar">
+      <div class="sidebar-header">نظام الفرع</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a class="nav-link active" onclick="switchTab(event, 'drawerTab')">يومية الحساب (الدرج)</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="switchTab(event, 'servicesTab')">أرقام الخدمة</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="switchTab(event, 'reportsTab')">الأرباح والإيرادات</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="switchTab(event, 'debtorsTab')">مدينون (ديون علينا)</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="switchTab(event, 'creditorsTab')">دائنون (فلوس لنا)</a>
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <button class="btn-danger btn-logout" onclick="logout()">تسجيل الخروج</button>
+      </div>
+    </div>
+
+    <!-- المنطقة الرئيسية -->
+    <div class="main-content">
+      <div class="top-bar">
+        <div class="page-title" id="pageTitle">يومية الحساب (الدرج)</div>
+      </div>
+
+      <div class="content-area">
+
+        <!-- 1. قسم يومية الحساب (الدرج) -->
+        <div id="drawerTab" class="section-view active">
+          <div class="grid-cards">
+            <div class="card">
+              <div class="card-title">رصيد الدرج الحالي</div>
+              <div class="card-value drawer-text" id="drawerDisplay">0.00 ج.م</div>
+            </div>
+            <div class="card">
+              <div class="card-title">إجمالي المدينون (ديون علينا)</div>
+              <div class="card-value danger-text" id="totalDebtorsDisplay">0.00 ج.م</div>
+            </div>
+            <div class="card">
+              <div class="card-title">إجمالي الدائنون (فلوس لنا)</div>
+              <div class="card-value success-text" id="totalCreditorsDisplay">0.00 ج.م</div>
+            </div>
+          </div>
+
+          <div class="form-container">
+            <h3>حركة مالية مباشرة في الدرج (إيداع / سحب مصروفات)</h3>
+            <form id="drawerForm" class="form-grid">
+              <select id="drawerTxType" required>
+                <option value="in">إيداع نقدي (+)</option>
+                <option value="out">سحب / مصروفات (-)</option>
+              </select>
+              <input type="number" id="drawerTxAmount" placeholder="المبلغ" step="0.01" required>
+              <input type="text" id="drawerTxNote" placeholder="ملاحظات / البيان" required>
+              <button type="submit">تسجيل في الدرج</button>
+            </form>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>الوقت</th>
+                <th>النوع</th>
+                <th>المبلغ</th>
+                <th>البيان / ملاحظات</th>
+                <th>التحكم</th>
+              </tr>
+            </thead>
+            <tbody id="drawerTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- 2. قسم أرقام الخدمة -->
+        <div id="servicesTab" class="section-view">
+          <div class="form-container">
+            <h3>تسجيل رقم خدمة جديد</h3>
+            <form id="serviceForm" class="form-grid">
+              <input type="text" id="serviceNumInput" placeholder="رقم الخدمة (مثال: SRV-101)" required>
+              <input type="text" id="serviceClientInput" placeholder="اسم العميل" required>
+              <input type="number" id="serviceCostInput" placeholder="قيمة الخدمة" step="0.01" required>
+              <select id="servicePaymentStatus" required>
+                <option value="paid">تم التحصيل (تسمع في الدرج)</option>
+                <option value="creditor">آجل (تُسجل في الدائنون - فلوس لنا)</option>
+                <option value="debtor">آجل (تُسجل في المدينون - ديون علينا)</option>
+              </select>
+              <button type="submit">حفظ الخدمة</button>
+            </form>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>رقم الخدمة</th>
+                <th>العميل</th>
+                <th>القيمة</th>
+                <th>الحالة</th>
+                <th>التحكم</th>
+              </tr>
+            </thead>
+            <tbody id="servicesTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- 3. قسم الأرباح والإيرادات (الزر الجديد) -->
+        <div id="reportsTab" class="section-view">
+          <div class="grid-cards">
+            <div class="card">
+              <div class="card-title">إجمالي إيرادات الخدمات</div>
+              <div class="card-value success-text" id="totalRevenuesDisplay">0.00 ج.م</div>
+            </div>
+            <div class="card">
+              <div class="card-title">إجمالي المصروفات والسحوبات</div>
+              <div class="card-value danger-text" id="totalExpensesDisplay">0.00 ج.م</div>
+            </div>
+            <div class="card">
+              <div class="card-title">صافي الأرباح (الإيرادات - المصروفات)</div>
+              <div class="card-value drawer-text" id="netProfitDisplay">0.00 ج.م</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. قسم مدينون -->
+        <div id="debtorsTab" class="section-view">
+          <div class="form-container">
+            <h3>تسجيل مستحق علينا (مدينون)</h3>
+            <form id="debtorForm" class="form-grid">
+              <input type="text" id="debtorName" placeholder="اسم الجهة / الشخص" required>
+              <input type="number" id="debtorAmount" placeholder="المبلغ المستحق" step="0.01" required>
+              <input type="text" id="debtorReason" placeholder="السبب" required>
+              <button type="submit">تسجيل الدين</button>
+            </form>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>الجهة / الشخص</th>
+                <th>المبلغ المتبقي</th>
+                <th>السبب</th>
+                <th>العمليات</th>
+              </tr>
+            </thead>
+            <tbody id="debtorsTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- 5. قسم دائنون -->
+        <div id="creditorsTab" class="section-view">
+          <div class="form-container">
+            <h3>تسجيل مبلغ لنا عند عميل/جهة (دائنون)</h3>
+            <form id="creditorForm" class="form-grid">
+              <input type="text" id="creditorName" placeholder="اسم العميل / الجهة" required>
+              <input type="number" id="creditorAmount" placeholder="المبلغ المطلوب" step="0.01" required>
+              <input type="text" id="creditorReason" placeholder="السبب / الخدمة" required>
+              <button type="submit">تسجيل المبلغ</button>
+            </form>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>العميل / الجهة</th>
+                <th>المبلغ المتبقي لنا</th>
+                <th>السبب</th>
+                <th>العمليات</th>
+              </tr>
+            </thead>
+            <tbody id="creditorsTableBody"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

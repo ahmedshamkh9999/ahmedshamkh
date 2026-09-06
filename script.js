@@ -1,15 +1,54 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// ---------------- تهيئة Firebase ----------------
+const firebaseConfig = {
+  apiKey: "AIzaSyDvqses2apRbgaV2nuqi1PXQUkSJLen7Sk",
+  authDomain: "ahmed-55bb3.firebaseapp.com",
+  databaseURL: "https://ahmed-55bb3-default-rtdb.firebaseio.com",
+  projectId: "ahmed-55bb3",
+  storageBucket: "ahmed-55bb3.firebasestorage.app",
+  messagingSenderId: "302443612277",
+  appId: "1:302443612277:web:56ff03a8a3f14b8e24503c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
 // البيانات المعتمدة لتسجيل الدخول
 const AUTH_USER = "admin";
 const AUTH_PASS = "1234";
 
-// حالة بيانات النظام
+// حالة بيانات النظام الأولى
 let state = {
-  drawerBalance: parseFloat(localStorage.getItem('br_drawer')) || 0,
-  logs: JSON.parse(localStorage.getItem('br_logs')) || [],
-  services: JSON.parse(localStorage.getItem('br_services')) || [],
-  debtors: JSON.parse(localStorage.getItem('br_debtors')) || [],
-  creditors: JSON.parse(localStorage.getItem('br_creditors')) || []
+  drawerBalance: 0,
+  logs: [],
+  services: [],
+  debtors: [],
+  creditors: []
 };
+
+// ---------------- الاستماع للتغيرات لحظياً من Firebase ----------------
+onValue(ref(db, 'app_state'), (snapshot) => {
+  const data = snapshot.val();
+  if (data) {
+    state = {
+      drawerBalance: data.drawerBalance || 0,
+      logs: data.logs || [],
+      services: data.services || [],
+      debtors: data.debtors || [],
+      creditors: data.creditors || []
+    };
+  } else {
+    state = { drawerBalance: 0, logs: [], services: [], debtors: [], creditors: [] };
+  }
+  renderUI();
+});
+
+// حفظ الحالة في Firebase عند أي تعديل
+function saveState() {
+  set(ref(db, 'app_state'), state);
+}
 
 // ---------------- نظام تسجيل الدخول ----------------
 
@@ -63,15 +102,6 @@ function checkAuth() {
 }
 
 // ---------------- منطق إدارة النظام ----------------
-
-function saveState() {
-  localStorage.setItem('br_drawer', state.drawerBalance);
-  localStorage.setItem('br_logs', JSON.stringify(state.logs));
-  localStorage.setItem('br_services', JSON.stringify(state.services));
-  localStorage.setItem('br_debtors', JSON.stringify(state.debtors));
-  localStorage.setItem('br_creditors', JSON.stringify(state.creditors));
-  renderUI();
-}
 
 function switchTab(e, tabId) {
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -358,6 +388,14 @@ function renderUI() {
     </tr>
   `).join('');
 }
+
+// إتاحة الدوال للنافذة لتسليم الأحداث من أزرار HTML
+window.logout = logout;
+window.switchTab = switchTab;
+window.payDebtor = payDebtor;
+window.collectCreditor = collectCreditor;
+window.deleteLog = deleteLog;
+window.deleteService = deleteService;
 
 // التحقق من الجلسة عند تحميل الصفحة
 checkAuth();

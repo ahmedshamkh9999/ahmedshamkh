@@ -30,6 +30,7 @@ let state = {
 
 // ---------------- الاستماع للتغيرات لحظياً من Firebase ----------------
 onValue(ref(db, 'app_state'), (snapshot) => {
+  console.log("Firebase Connected successfully! Data retrieved:", snapshot.val());
   const data = snapshot.val();
   if (data) {
     state = {
@@ -43,11 +44,20 @@ onValue(ref(db, 'app_state'), (snapshot) => {
     state = { drawerBalance: 0, logs: [], services: [], debtors: [], creditors: [] };
   }
   renderUI();
+}, (error) => {
+  console.error("Firebase Read Error:", error);
 });
 
 // حفظ الحالة في Firebase عند أي تعديل
 function saveState() {
-  set(ref(db, 'app_state'), state);
+  console.log("Saving new state to Firebase...", state);
+  set(ref(db, 'app_state'), state)
+    .then(() => {
+      console.log("State saved successfully!");
+    })
+    .catch((error) => {
+      console.error("Firebase Save Error:", error);
+    });
 }
 
 // ---------------- نظام تسجيل الدخول ----------------

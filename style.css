@@ -1,27 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --bg-main: #f8fafc;
-  --sidebar-bg: #0f172a;
-  --sidebar-hover: #1e293b;
-  --sidebar-active: #2563eb;
-  --card-bg: #ffffff;
-  --text-dark: #0f172a;
-  --text-muted: #64748b;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
+  --bg-main: #0b0f19;
+  --bg-secondary: #111827;
+  --card-bg: rgba(17, 24, 39, 0.75);
+  --card-border: rgba(255, 255, 255, 0.08);
+  
+  --sidebar-bg: #070a12;
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  --sidebar-active: #3b82f6;
+  
+  --text-dark: #f3f4f6;
+  --text-muted: #9ca3af;
+  
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.35);
+  --primary-hover: #4f46e5;
+  
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
-  --border-color: #e2e8f0;
   
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 12px 30px -4px rgba(0, 0, 0, 0.08);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
 }
 
 * {
@@ -38,20 +40,20 @@ body {
   height: 100vh;
 }
 
-/* شريط التمرير المخصص */
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 i {
@@ -63,7 +65,7 @@ i {
 }
 
 /* ==========================================
-   شاشة تسجيل الدخول (Glassmorphism & Background)
+   شاشة تسجيل الدخول المظلمة (Dark Cyber-Glass)
    ========================================== */
 .login-wrapper {
   display: flex;
@@ -71,26 +73,67 @@ i {
   align-items: center;
   min-height: 100vh;
   width: 100vw;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 58, 138, 0.8)),
-              url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1920') center/cover no-repeat;
+  background: radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.18), transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.1), transparent 40%),
+              #070a12;
   padding: 20px;
+  position: relative;
 }
 
+/* --- كارت تسجيل الدخول مع الحواف الملونه المتحركة --- */
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
-  padding: 40px 32px;
+  position: relative;
+  padding: 48px 40px;
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   text-align: center;
-  animation: fadeIn 0.4s ease-out;
+  animation: floatUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7),
+              0 0 30px rgba(99, 102, 241, 0.2);
+  z-index: 1;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
+/* الخلفية الشفافة الأصلية للكارت (Glassmorphism) */
+.login-card::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: rgba(17, 24, 39, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: calc(var(--radius-lg) - 2px);
+  z-index: -1;
+}
+
+/* الشعاع/الخط الملون المتحرك حول الحواف */
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    transparent 0deg,
+    transparent 270deg,
+    #6366f1 300deg,
+    #ec4899 320deg,
+    #10b981 340deg,
+    #6366f1 360deg
+  );
+  animation: rotateLine 4s linear infinite;
+  z-index: -2;
+}
+
+@keyframes rotateLine {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes floatUp {
+  from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -98,24 +141,33 @@ i {
   width: 84px;
   height: 84px;
   object-fit: contain;
-  margin: 0 auto 16px;
+  margin: 0 auto 24px;
   display: block;
   border-radius: 50%;
-  background: #ffffff;
-  padding: 10px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.3);
+  transition: all 0.4s ease;
+  animation: spinLogo 16s linear infinite;
+}
+
+.login-logo:hover {
+  animation-play-state: paused;
+  transform: scale(1.1);
+  box-shadow: 0 0 35px rgba(99, 102, 241, 0.5);
 }
 
 .login-card h2 {
-  margin-bottom: 6px;
-  color: var(--text-dark);
-  font-size: 1.6rem;
+  margin-bottom: 8px;
+  color: #ffffff;
+  font-size: 1.8rem;
   font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .login-card p {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   color: var(--text-muted);
   font-size: 0.9rem;
 }
@@ -123,114 +175,117 @@ i {
 .login-card form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.auth-toggle {
-  margin-top: 20px;
-  font-size: 0.88rem;
-}
-
-.auth-toggle a {
-  color: var(--primary);
-  cursor: pointer;
-  font-weight: 700;
-  text-decoration: underline;
-  transition: color 0.2s ease;
-}
-
-.auth-toggle a:hover {
-  color: var(--primary-hover);
-}
-
-.error-msg {
-  color: var(--danger);
-  font-size: 0.85rem;
-  margin-top: 12px;
-  background-color: #fef2f2;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid #fecaca;
-  display: none;
+  gap: 20px;
 }
 
 /* ==========================================
-   حقول الإدخال والأيقونات
+   مدخلات البيانات الحديثة (Ultra Modern Inputs)
    ========================================== */
 .input-group {
-  position: relative;
   width: 100%;
-}
-
-.input-icon {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  pointer-events: none;
-  font-size: 0.95rem;
-}
-
-.input-group input {
-  width: 100%;
-  padding: 12px 42px 12px 14px;
 }
 
 input, select {
-  padding: 12px 16px;
+  width: 100%;
+  padding: 15px 18px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
-  font-size: 0.92rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.95rem;
+  font-weight: 500;
   outline: none;
-  background-color: #f8fafc;
-  color: var(--text-dark);
-  transition: all 0.2s ease;
+  background-color: rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  transition: all 0.25s ease;
+  text-align: right;
+  direction: rtl;
+}
+
+input::placeholder {
+  color: #6b7280;
+}
+
+input:hover, select:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  background-color: rgba(0, 0, 0, 0.45);
 }
 
 input:focus, select:focus {
-  background-color: #ffffff;
+  background-color: rgba(0, 0, 0, 0.55);
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px var(--primary-glow), 0 8px 16px rgba(0,0,0,0.3);
+  transform: translateY(-1px);
 }
 
 button {
-  padding: 12px 20px;
+  width: 100%;
+  padding: 15px;
   border-radius: var(--radius-sm);
   border: none;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: #fff;
-  font-size: 0.95rem;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #ffffff;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-  transition: all 0.2s ease;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+  transition: all 0.25s ease;
 }
 
 button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.5);
+  filter: brightness(1.1);
 }
 
 button:active {
   transform: translateY(0);
 }
 
+.auth-toggle {
+  margin-top: 22px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.auth-toggle a {
+  color: #818cf8;
+  cursor: pointer;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.auth-toggle a:hover {
+  color: #a5b4fc;
+  text-shadow: 0 0 8px rgba(165, 180, 252, 0.4);
+}
+
+.error-msg {
+  color: #fca5a5;
+  font-size: 0.85rem;
+  margin-top: 12px;
+  background-color: rgba(239, 68, 68, 0.15);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  display: none;
+}
+
 /* ==========================================
-   التطبيق الرئيسي (القائمة الجانبية والهيدر)
+   الهيكل الرئيسي للوحة التحكم (Dashboard)
    ========================================== */
 .app-wrapper {
   display: flex;
   height: 100vh;
+  background-color: var(--bg-main);
 }
 
 .sidebar {
   width: 270px;
   background-color: var(--sidebar-bg);
+  border-left: 1px solid var(--card-border);
   color: #fff;
   display: flex;
   flex-direction: column;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
   z-index: 10;
 }
 
@@ -238,12 +293,9 @@ button:active {
   padding: 28px 20px;
   font-size: 1.35rem;
   font-weight: 800;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--card-border);
   text-align: center;
-  color: #38bdf8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: #818cf8;
   letter-spacing: 0.5px;
 }
 
@@ -260,9 +312,9 @@ button:active {
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 12px 18px;
+  padding: 13px 18px;
   border-radius: var(--radius-sm);
-  color: #94a3b8;
+  color: var(--text-muted);
   text-decoration: none;
   cursor: pointer;
   font-size: 0.95rem;
@@ -272,55 +324,80 @@ button:active {
 
 .nav-link:hover {
   background-color: var(--sidebar-hover);
-  color: #f8fafc;
-  transform: translateX(-3px);
+  color: #ffffff;
 }
 
 .nav-link.active {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
 }
 
 .sidebar-footer {
   padding: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--card-border);
 }
 
 .btn-logout {
   width: 100%;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  box-shadow: none;
 }
 
 .btn-logout:hover {
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
 }
 
+/* ==========================================
+   منطقة المحتوى الرئيسية + اللوجو المائي في الخلفية
+   ========================================== */
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  background-color: var(--bg-main);
-  background: linear-gradient(rgba(248, 250, 252, 0.0), rgba(30, 50, 70, 0.92)), 
-              url('فوري.jpeg') center/cover no-repeat fixed;
+  background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08), transparent 40%),
+              var(--bg-main);
+  position: relative;
+  z-index: 1;
+}
+
+/* اللوجو الغاطس في الخلفية كعلامة مائية */
+.main-content::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px; /* حجم اللوجو خلف العناصر */
+  height: 500px;
+  background-image: url('فوري.jpeg'); /* ضع هنا مسار صورة اللوجو الخاصة بك */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.18; /* يمكنك تغيير الشفافية لزيادة وضوحه أو تقليله */
+  pointer-events: none;
+  z-index: -1;
 }
 
 .top-bar {
-  background: var(--card-bg);
+  background: rgba(11, 15, 25, 0.8);
+  backdrop-filter: blur(12px);
   padding: 20px 32px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--card-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: var(--shadow-sm);
 }
 
 .page-title {
   font-size: 1.3rem;
   font-weight: 800;
-  color: var(--text-dark);
+  color: #ffffff;
 }
 
 .content-area {
@@ -329,7 +406,7 @@ button:active {
 }
 
 /* ==========================================
-   كروت الإحصائيات (Stat Cards)
+   كروت الإحصائيات (Stat Cards Glow)
    ========================================== */
 .grid-cards {
   display: grid;
@@ -340,58 +417,43 @@ button:active {
 
 .card {
   background: var(--card-bg);
-  padding: 22px 24px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md);
-  position: relative;
-  overflow: hidden;
-  transition: all 0.25s ease;
+  backdrop-filter: blur(12px);
+  padding: 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
 }
 
 .card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 20px rgba(99, 102, 241, 0.15);
 }
-
-/* شريط ملون علوي تمييزي لكل كارت */
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 4px;
-  background: var(--primary);
-}
-
-.card:nth-child(2)::before { background: var(--danger); }
-.card:nth-child(3)::before { background: var(--success); }
 
 .card-title {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-muted);
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
+  margin-bottom: 12px;
 }
 
 .card-value {
-  font-size: 1.65rem;
+  font-size: 1.75rem;
   font-weight: 800;
+  color: #ffffff;
 }
 
-.drawer-text { color: var(--primary); }
-.danger-text { color: var(--danger); }
-.success-text { color: var(--success); }
+.drawer-text { color: #818cf8; }
+.danger-text { color: #f87171; }
+.success-text { color: #34d399; }
 
 /* ==========================================
    النماذج وحاويات المدخلات (Forms)
    ========================================== */
 .section-view {
   display: none;
-  animation: fadeIn 0.3s ease-out;
+  animation: floatUp 0.3s ease-out;
 }
 
 .section-view.active {
@@ -400,67 +462,73 @@ button:active {
 
 .form-container {
   background: var(--card-bg);
-  padding: 24px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+  padding: 28px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   margin-bottom: 28px;
 }
 
 .form-container h3 {
-  margin-bottom: 16px;
-  font-size: 1.05rem;
+  margin-bottom: 18px;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: var(--text-dark);
+  color: #ffffff;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .btn-danger {
   background: linear-gradient(135deg, #ef4444, #dc2626);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
 }
 
 .btn-success {
   background: linear-gradient(135deg, #10b981, #059669);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
 }
 
 .btn-small {
-  padding: 6px 14px;
-  font-size: 0.8rem;
-  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  border-radius: 8px;
 }
 
 /* ==========================================
-   الجداول والبادجات (Tables)
+   الجداول (Sleek Dark Tables)
    ========================================== */
 table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   background: var(--card-bg);
-  border-radius: var(--radius-lg);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 th, td {
   padding: 16px 20px;
   text-align: right;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--card-border);
   font-size: 0.92rem;
 }
 
 th {
-  background-color: #f1f5f9;
+  background-color: rgba(255, 255, 255, 0.03);
   color: var(--text-muted);
   font-weight: 700;
+}
+
+td {
+  color: #e5e7eb;
 }
 
 tr:last-child td {
@@ -472,30 +540,29 @@ tbody tr {
 }
 
 tbody tr:hover {
-  background-color: #f8fafc;
+  background-color: rgba(255, 255, 255, 0.04);
 }
 
 .badge {
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.78rem;
   font-weight: 700;
   display: inline-block;
 }
 
-.badge-success { background: #dcfce7; color: #15803d; }
-.badge-danger { background: #fee2e2; color: #b91c1c; }
-.badge-warning { background: #fef3c7; color: #b45309; }
+.badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+.badge-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
 
 /* ==========================================
    تنسيق الفوتر (Footer)
    ========================================== */
 .app-footer {
-  background-color: var(--card-bg, #ffffff);
-  border-top: 1px solid var(--border-color, #e2e8f0);
-  padding: 16px 32px;
+  background-color: var(--sidebar-bg);
+  border-top: 1px solid var(--card-border);
+  padding: 18px 32px;
   margin-top: auto;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.02);
 }
 
 .footer-content {
@@ -505,14 +572,26 @@ tbody tr:hover {
   flex-wrap: wrap;
   gap: 12px;
   font-size: 0.85rem;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
 }
 
 .footer-content strong {
-  color: var(--text-dark, #0f172a);
+  color: #ffffff;
 }
 
 .dev-tag span {
-  color: var(--primary, #2563eb);
+  color: #818cf8;
   font-weight: 700;
+}
+
+/* ==========================================
+   انيميشن دوران الأيقونة (Spin Animation)
+   ========================================== */
+@keyframes spinLogo {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

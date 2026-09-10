@@ -15,15 +15,13 @@
     <div class="login-card">
       <img src="فوري.jpeg" alt="لوجو الفرع" class="login-logo" onerror="this.style.display='none'">
       <h2>نظام الفرع</h2>
-      <p>welcom to system The Branch</p>
-      <p>لتواصل دعم:01040810091</p>
-      <p>مرحبا بكم ف نظامنا </p>
+      <h3>welcom to system The Branch</h3>
       <form id="loginForm">
         <input type="text" id="usernameInput" placeholder="اسم المستخدم" required>
         <input type="password" id="passwordInput" placeholder="كلمة المرور" required>
         <button type="submit">تسجيل الدخول</button>
       </form>
-      <div id="loginError" class="error-msg">اسم المستخدم أو كلمة المرور غير صحيحة</div>
+      <div id="loginError" class="error-msg">برجاء ادخل البيانات صحيحه </div>
     </div>
   </div>
 
@@ -34,7 +32,7 @@
       <div class="sidebar-header">نظام الفرع</div>
       <ul class="nav-list">
         <li class="nav-item">
-          <a class="nav-link active" onclick="switchTab(event, 'drawerTab')">يومية الحساب (الدرج)</a>
+          <a class="nav-link active" onclick="switchTab(event, 'drawerTab')">يومية الحساب </a>
         </li>
         <li class="nav-item">
           <a class="nav-link" onclick="switchTab(event, 'servicesTab')">أرقام الخدمة</a>
@@ -43,10 +41,10 @@
           <a class="nav-link" onclick="switchTab(event, 'reportsTab')">الأرباح والإيرادات</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" onclick="switchTab(event, 'debtorsTab')">مدينون (ديون علينا)</a>
+          <a class="nav-link" onclick="switchTab(event, 'debtorsTab')">مدينون </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" onclick="switchTab(event, 'creditorsTab')">دائنون (فلوس لنا)</a>
+          <a class="nav-link" onclick="switchTab(event, 'creditorsTab')">دائنون</a>
         </li>
       </ul>
       <div class="sidebar-footer">
@@ -57,7 +55,7 @@
     <!-- المنطقة الرئيسية -->
     <div class="main-content">
       <div class="top-bar">
-        <div class="page-title" id="pageTitle">يومية الحساب (الدرج)</div>
+        <div class="page-title" id="pageTitle">يومية الحساب </div>
       </div>
 
       <div class="content-area">
@@ -70,21 +68,21 @@
               <div class="card-value drawer-text" id="drawerDisplay">0.00 ج.م</div>
             </div>
             <div class="card">
-              <div class="card-title">إجمالي المدينون (ديون علينا)</div>
+              <div class="card-title">إجمالي المدينون</div>
               <div class="card-value danger-text" id="totalDebtorsDisplay">0.00 ج.م</div>
             </div>
             <div class="card">
-              <div class="card-title">إجمالي الدائنون (فلوس لنا)</div>
+              <div class="card-title">إجمالي الدائنون</div>
               <div class="card-value success-text" id="totalCreditorsDisplay">0.00 ج.م</div>
             </div>
           </div>
 
           <div class="form-container">
-            <h3>حركة مالية مباشرة في الدرج (إيداع / سحب مصروفات)</h3>
+            <h3>تسجيل الايداع و سحب </h3>
             <form id="drawerForm" class="form-grid">
               <select id="drawerTxType" required>
-                <option value="in">إيداع نقدي (+)</option>
-                <option value="out">سحب / مصروفات (-)</option>
+                <option value="in">إيداع نقدي</option>
+                <option value="out">سحب</option>
               </select>
               <input type="number" id="drawerTxAmount" placeholder="المبلغ" step="0.01" required>
               <input type="text" id="drawerTxNote" placeholder="ملاحظات / البيان" required>
@@ -115,9 +113,9 @@
               <input type="text" id="serviceClientInput" placeholder="اسم العميل" required>
               <input type="number" id="serviceCostInput" placeholder="قيمة الخدمة" step="0.01" required>
               <select id="servicePaymentStatus" required>
-                <option value="paid">تم التحصيل (تسمع في الدرج)</option>
-                <option value="creditor">آجل (تُسجل في الدائنون - فلوس لنا)</option>
-                <option value="debtor">آجل (تُسجل في المدينون - ديون علينا)</option>
+                <option value="paid">تم التحصيل ف الدرج</option>
+                <option value="creditor">آجل (تُسجل في الدائنون)</option>
+                <option value="debtor">آجل (تُسجل في المدينون )</option>
               </select>
               <button type="submit">حفظ الخدمة</button>
             </form>
@@ -149,7 +147,7 @@
               <div class="card-value danger-text" id="totalExpensesDisplay">0.00 ج.م</div>
             </div>
             <div class="card">
-              <div class="card-title">صافي الأرباح (الإيرادات - المصروفات)</div>
+              <div class="card-title">صافي الأرباح </div>
               <div class="card-value drawer-text" id="netProfitDisplay">0.00 ج.م</div>
             </div>
           </div>
@@ -206,6 +204,15 @@
         </div>
 
       </div>
+
+      <!-- الفوتر -->
+      <footer class="app-footer">
+        <div class="footer-content">
+          <p>جميع الحقوق محفوظة &copy; 2026 <strong>نظام الفرع</strong></p>
+          <p class="dev-tag">تطوير بواسطة: <span>أحمد شمخ</span> | الإصدار 1.0.0</p>
+        </div>
+      </footer>
+
     </div>
   </div>
   <script src="script.js"></script>

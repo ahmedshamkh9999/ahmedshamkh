@@ -486,3 +486,33 @@ tbody tr:hover {
 .badge-success { background: #dcfce7; color: #15803d; }
 .badge-danger { background: #fee2e2; color: #b91c1c; }
 .badge-warning { background: #fef3c7; color: #b45309; }
+
+/* ==========================================
+   تنسيق الفوتر (Footer)
+   ========================================== */
+.app-footer {
+  background-color: var(--card-bg, #ffffff);
+  border-top: 1px solid var(--border-color, #e2e8f0);
+  padding: 16px 32px;
+  margin-top: auto;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
+}
+
+.footer-content strong {
+  color: var(--text-dark, #0f172a);
+}
+
+.dev-tag span {
+  color: var(--primary, #2563eb);
+  font-weight: 700;
+}

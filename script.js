@@ -13,6 +13,18 @@ async function hashText(text) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// دالة تحميل مكتبات خارجية (ل والباركود والكاميرا) تلقائياً
+function loadScript(url, callback) {
+  if (document.querySelector(`script[src="${url}"]`)) {
+    if (callback) callback();
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = url;
+  script.onload = callback;
+  document.head.appendChild(script);
+}
+
 // دالة تغيير بيانات الدخول
 async function changeCredentials(newUsername, newPassword) {
   if (!newUsername || !newPassword) return;
@@ -30,6 +42,111 @@ async function changeCredentials(newUsername, newPassword) {
 document.addEventListener('DOMContentLoaded', () => {
   const authForm = document.getElementById('changeAuthForm');
   if (authForm) {
+    // إضافة أزرار مزامنة الباركود تلقائياً داخل صفحة الإعدادات
+    if (!document.getElementById('qrSyncContainer')) {
+      const qrDiv = document.createElement('div');
+      qrDiv.id = 'qrSyncContainer';
+      qrDiv.style.marginTop = '25px';
+      qrDiv.style.paddingTop = '20px';
+      qrDiv.style.borderTop = '1px solid #334155';
+      qrDiv.innerHTML = `
+        <h3 style="color: #f8fafc; margin-bottom: 8px; font-size: 1.1rem;">🔄 مزامنة فورية بالباركود (QR Code)</h3>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">انقل العمليات من الموبايل للكمبيوتر بضغطة زر وبدون ملفات.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="button" id="showQrBtn" class="btn-success" style="flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📱 إظهار باركود (للموبايل)</button>
+          <button type="button" id="scanQrBtn" class="btn-primary" style="flex: 1; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📷 مسح باركود (للكمبيوتر)</button>
+        </div>
+      `;
+      authForm.parentNode.appendChild(qrDiv);
+
+      // ربط زر إظهار الباركود (للموبايل)
+      document.getElementById('showQrBtn').addEventListener('click', () => {
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js', () => {
+          const syncData = {
+            d: localStorage.getItem('br_drawer'),
+            l: localStorage.getItem('br_logs'),
+            s: localStorage.getItem('br_services'),
+            db: localStorage.getItem('br_debtors'),
+            cr: localStorage.getItem('br_creditors'),
+            u: localStorage.getItem('app_user_hash'),
+            p: localStorage.getItem('app_pass_hash')
+          };
+          const jsonStr = JSON.stringify(syncData);
+
+          Swal.fire({
+            title: 'باركود مزامنة الفرع',
+            html: `
+              <div id="qrcodeBox" style="display: flex; justify-content: center; margin: 15px 0; background: white; padding: 15px; border-radius: 8px;"></div>
+              <p style="color: #94a3b8; font-size: 13px;">افتح موقع الفرع من الكمبيوتر، اضغط مسح باركود، ووجه الكاميرا هنا.</p>
+            `,
+            didOpen: () => {
+              document.getElementById('qrcodeBox').innerHTML = '';
+              new QRCode(document.getElementById('qrcodeBox'), {
+                text: jsonStr,
+                width: 230,
+                height: 230
+              });
+            },
+            confirmButtonText: 'إغلاق',
+            confirmButtonColor: '#3b82f6'
+          });
+        });
+      });
+
+      // ربط زر مسح الباركود (للكمبيوتر)
+      document.getElementById('scanQrBtn').addEventListener('click', () => {
+        loadScript('https://unpkg.com/html5-qrcode', () => {
+          Swal.fire({
+            title: 'وجه كاميرا الكمبيوتر نحو الموبايل',
+            html: '<div id="reader" style="width: 100%; max-width: 280px; margin: auto;"></div>',
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'إلغاء',
+            cancelButtonColor: '#ef4444',
+            didOpen: () => {
+              const html5QrCode = new Html5Qrcode("reader");
+              html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 220, height: 220 } },
+                (decodedText) => {
+                  html5QrCode.stop().then(() => {
+                    try {
+                      const data = JSON.parse(decodedText);
+                      if (data.d !== undefined) localStorage.setItem('br_drawer', data.d);
+                      if (data.l) localStorage.setItem('br_logs', data.l);
+                      if (data.s) localStorage.setItem('br_services', data.s);
+                      if (data.db) localStorage.setItem('br_debtors', data.db);
+                      if (data.cr) localStorage.setItem('br_creditors', data.cr);
+                      if (data.u) localStorage.setItem('app_user_hash', data.u);
+                      if (data.p) localStorage.setItem('app_pass_hash', data.p);
+
+                      Swal.fire({
+                        icon: 'success',
+                        title: 'تمت المزامنة الفورية بنجاح!',
+                        text: 'جاري تحديث بيانات الكمبيوتر...',
+                        timer: 1500,
+                        showConfirmButton: false
+                      }).then(() => {
+                        location.reload();
+                      });
+                    } catch (err) {
+                      Swal.fire('خطأ', 'باركود غير صالح، تأكد من مسح باركود النظام الصحيح.', 'error');
+                    }
+                  }).catch(() => {});
+                },
+                () => {}
+              ).catch(() => {
+                Swal.fire('تعذر تشغيل الكاميرا', 'تأكد من السماح للمتصفح بالوصول للكاميرا.', 'error');
+              });
+            },
+            willClose: () => {
+              // محاولة إيقاف الماسح عند الإغلاق اليدوي إن وجد
+            }
+          });
+        });
+      });
+    }
+
     authForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const currentPass = document.getElementById('currentPasswordInput') ? document.getElementById('currentPasswordInput').value.trim() : '';
@@ -56,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// حالة بيانات النظام (تُقرأ مباشرة من ذاكرة المتصفح localStorage)
+// حالة بيانات النظام
 let state = {
   drawerBalance: parseFloat(localStorage.getItem('br_drawer')) || 0,
   logs: JSON.parse(localStorage.getItem('br_logs')) || [],

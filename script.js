@@ -30,29 +30,6 @@ async function changeCredentials(newUsername, newPassword) {
 document.addEventListener('DOMContentLoaded', () => {
   const authForm = document.getElementById('changeAuthForm');
   if (authForm) {
-    // إضافة أزرار النسخ الاحتياطي تلقائياً تحت نموذج الإعدادات
-    if (!document.getElementById('backupSectionContainer')) {
-      const backupDiv = document.createElement('div');
-      backupDiv.id = 'backupSectionContainer';
-      backupDiv.style.marginTop = '25px';
-      backupDiv.style.paddingTop = '20px';
-      backupDiv.style.borderTop = '1px solid #334155';
-      backupDiv.innerHTML = `
-        <h3 style="color: #f8fafc; margin-bottom: 12px; font-size: 1.1rem;">مزامنة ونقل البيانات (بين الموبايل والكمبيوتر)</h3>
-        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">قم بتصدير ملف النسخة الاحتياطي من الموبايل وارفعه هنا على الكمبيوتر.</p>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button type="button" id="exportBtn" class="btn-success" style="flex: 1; padding: 10px;">📥 تصدير البيانات (نسخة)</button>
-          <label for="importFileBtn" class="btn-primary" style="flex: 1; padding: 10px; text-align: center; cursor: pointer; background: #3b82f6; border-radius: 6px; color: white; display: inline-block;">📤 استيراد البيانات</label>
-          <input type="file" id="importFileBtn" accept=".json" style="display: none;">
-        </div>
-      `;
-      authForm.parentNode.appendChild(backupDiv);
-
-      // ربط أزرار النسخ الاحتياطي بالوظائف
-      document.getElementById('exportBtn').addEventListener('click', exportData);
-      document.getElementById('importFileBtn').addEventListener('change', importData);
-    }
-
     authForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const currentPass = document.getElementById('currentPasswordInput') ? document.getElementById('currentPasswordInput').value.trim() : '';
@@ -79,59 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// دوال التصدير والاستيراد
-function exportData() {
-  const data = {
-    br_drawer: localStorage.getItem('br_drawer'),
-    br_logs: localStorage.getItem('br_logs'),
-    br_services: localStorage.getItem('br_services'),
-    br_debtors: localStorage.getItem('br_debtors'),
-    br_creditors: localStorage.getItem('br_creditors'),
-    app_user_hash: localStorage.getItem('app_user_hash'),
-    app_pass_hash: localStorage.getItem('app_pass_hash')
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `backup_system_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (data.br_drawer !== undefined) localStorage.setItem('br_drawer', data.br_drawer);
-      if (data.br_logs) localStorage.setItem('br_logs', data.br_logs);
-      if (data.br_services) localStorage.setItem('br_services', data.br_services);
-      if (data.br_debtors) localStorage.setItem('br_debtors', data.br_debtors);
-      if (data.br_creditors) localStorage.setItem('br_creditors', data.br_creditors);
-      if (data.app_user_hash) localStorage.setItem('app_user_hash', data.app_user_hash);
-      if (data.app_pass_hash) localStorage.setItem('app_pass_hash', data.app_pass_hash);
-
-      Swal.fire({
-        icon: 'success',
-        title: 'تم استعادة البيانات بنجاح!',
-        text: 'جاري تحديث الصفحة...',
-        timer: 1500,
-        showConfirmButton: false
-      }).then(() => {
-        location.reload();
-      });
-    } catch (err) {
-      Swal.fire('خطأ', 'الملف غير صالح أو التنسيق غير صحيح', 'error');
-    }
-  };
-  reader.readAsText(file);
-}
-
-// حالة بيانات النظام
+// حالة بيانات النظام (تُقرأ مباشرة من ذاكرة المتصفح localStorage)
 let state = {
   drawerBalance: parseFloat(localStorage.getItem('br_drawer')) || 0,
   logs: JSON.parse(localStorage.getItem('br_logs')) || [],

@@ -1,4 +1,3 @@
-
 const DEFAULT_USER_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
 const DEFAULT_PASS_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 
@@ -29,7 +28,7 @@ async function changeCredentials(newUsername, newPassword) {
   sessionStorage.setItem('isLoggedIn', newPHash);
 }
 
-// معالجة نموذج تغيير البيانات (الآمن بعد إضافة التحقق)
+// معالجة نموذج تغيير البيانات
 document.addEventListener('DOMContentLoaded', () => {
   const authForm = document.getElementById('changeAuthForm');
   if (authForm) {
@@ -45,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // التحقق من صحة كلمة السر الحالية
       if (document.getElementById('currentPasswordInput')) {
         const inputCurrentHash = await hashText(currentPass);
         if (inputCurrentHash !== authPassHash) {
@@ -73,14 +71,32 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// حالة بيانات النظام
+// حالة بيانات النظام (تبدأ فارغة وسيتم جلبها من data.json)
 let state = {
-  drawerBalance: parseFloat(localStorage.getItem('br_drawer')) || 0,
-  logs: JSON.parse(localStorage.getItem('br_logs')) || [],
-  services: JSON.parse(localStorage.getItem('br_services')) || [],
-  debtors: JSON.parse(localStorage.getItem('br_debtors')) || [],
-  creditors: JSON.parse(localStorage.getItem('br_creditors')) || []
+  drawerBalance: 0,
+  logs: [],
+  services: [],
+  debtors: [],
+  creditors: []
 };
+
+// دالة جلب البيانات من ملف data.json مع منع التخزين المؤقت للموبايل
+async function loadDataFromJson() {
+  try {
+    const response = await fetch('data.json?v=' + Date.now());
+    if (response.ok) {
+      const jsonData = await response.json();
+      state.drawerBalance = jsonData.drawerBalance || 0;
+      state.logs = jsonData.logs || [];
+      state.services = jsonData.services || [];
+      state.debtors = jsonData.debtors || [];
+      state.creditors = jsonData.creditors || [];
+    }
+  } catch (error) {
+    console.error('تعذر جلب ملف البيانات:', error);
+  }
+  checkAuth();
+}
 
 // ---------------- نظام تسجيل الدخول ----------------
 
@@ -437,4 +453,5 @@ function renderUI() {
   `).join('');
 }
 
-checkAuth();
+// بدء تحميل البيانات عند فتح الصفحة
+loadDataFromJson();

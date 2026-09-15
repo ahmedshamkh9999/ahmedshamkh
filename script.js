@@ -4,7 +4,7 @@ const DEFAULT_PASS_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f
 let authUserHash = localStorage.getItem('app_user_hash') || DEFAULT_USER_HASH;
 let authPassHash = localStorage.getItem('app_pass_hash') || DEFAULT_PASS_HASH;
 
-// دالة تشفير SHA-256 لحماية البيانات
+// دالة تشفير SHA-256 للحماية
 async function hashText(text) {
   const encoder = new TextEncoder();
   const data = encoder.encode(text);
@@ -13,10 +13,9 @@ async function hashText(text) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// دالة لتغيير اسم المستخدم وكلمة السر
+// دالة تغيير بيانات الدخول
 async function changeCredentials(newUsername, newPassword) {
   if (!newUsername || !newPassword) return;
-  
   const newUHash = await hashText(newUsername.trim());
   const newPHash = await hashText(newPassword.trim());
 
@@ -28,13 +27,11 @@ async function changeCredentials(newUsername, newPassword) {
   sessionStorage.setItem('isLoggedIn', newPHash);
 }
 
-// معالجة نموذج تغيير البيانات
 document.addEventListener('DOMContentLoaded', () => {
   const authForm = document.getElementById('changeAuthForm');
   if (authForm) {
     authForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
       const currentPass = document.getElementById('currentPasswordInput') ? document.getElementById('currentPasswordInput').value.trim() : '';
       const newUsers = document.getElementById('newUsernameInput').value.trim();
       const newPass = document.getElementById('newPasswordInput').value.trim();
@@ -47,59 +44,28 @@ document.addEventListener('DOMContentLoaded', () => {
       if (document.getElementById('currentPasswordInput')) {
         const inputCurrentHash = await hashText(currentPass);
         if (inputCurrentHash !== authPassHash) {
-          Swal.fire({
-            icon: 'error',
-            title: 'خطأ!',
-            text: 'كلمة السر الحالية غير صحيحة، لا يمكنك تغيير البيانات.',
-            confirmButtonColor: '#ef4444'
-          });
+          Swal.fire({ icon: 'error', title: 'خطأ!', text: 'كلمة السر الحالية غير صحيحة.', confirmButtonColor: '#ef4444' });
           return;
         }
       }
 
       await changeCredentials(newUsers, newPass);
-
-      Swal.fire({
-        icon: 'success',
-        title: 'تم التحديث بنجاح!',
-        text: 'تم تغيير اسم المستخدم وكلمة السر بنجاح.',
-        confirmButtonColor: '#10b981'
-      });
-
+      Swal.fire({ icon: 'success', title: 'تم التحديث بنجاح!', text: 'تم تغيير بيانات الدخول.', confirmButtonColor: '#10b981' });
       authForm.reset();
     });
   }
 });
 
-// حالة بيانات النظام (تبدأ فارغة وسيتم جلبها من data.json)
+// حالة بيانات النظام (تُقرأ مباشرة من ذاكرة المتصفح localStorage)
 let state = {
-  drawerBalance: 0,
-  logs: [],
-  services: [],
-  debtors: [],
-  creditors: []
+  drawerBalance: parseFloat(localStorage.getItem('br_drawer')) || 0,
+  logs: JSON.parse(localStorage.getItem('br_logs')) || [],
+  services: JSON.parse(localStorage.getItem('br_services')) || [],
+  debtors: JSON.parse(localStorage.getItem('br_debtors')) || [],
+  creditors: JSON.parse(localStorage.getItem('br_creditors')) || []
 };
 
-// دالة جلب البيانات من ملف data.json مع منع التخزين المؤقت للموبايل
-async function loadDataFromJson() {
-  try {
-    const response = await fetch('data.json?v=' + Date.now());
-    if (response.ok) {
-      const jsonData = await response.json();
-      state.drawerBalance = jsonData.drawerBalance || 0;
-      state.logs = jsonData.logs || [];
-      state.services = jsonData.services || [];
-      state.debtors = jsonData.debtors || [];
-      state.creditors = jsonData.creditors || [];
-    }
-  } catch (error) {
-    console.error('تعذر جلب ملف البيانات:', error);
-  }
-  checkAuth();
-}
-
 // ---------------- نظام تسجيل الدخول ----------------
-
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const user = document.getElementById('usernameInput').value.trim();
@@ -122,7 +88,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 function logout() {
   Swal.fire({
     title: 'تسجيل الخروج',
-    text: 'هل أنت تأكد من تسجيل الخروج؟',
+    text: 'هل أنت متأكد من تسجيل الخروج؟',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
@@ -152,8 +118,7 @@ function checkAuth() {
   }
 }
 
-// ---------------- منطق إدارة النظام ----------------
-
+// ---------------- حفظ البيانات ----------------
 function saveState() {
   localStorage.setItem('br_drawer', state.drawerBalance);
   localStorage.setItem('br_logs', JSON.stringify(state.logs));
@@ -163,6 +128,7 @@ function saveState() {
   renderUI();
 }
 
+// ---------------- التنقل بين التبويبات ----------------
 function switchTab(e, tabId) {
   if (e) e.preventDefault();
   
@@ -198,7 +164,7 @@ function addLog(type, amount, note) {
   });
 }
 
-// 1. حركة الدرج المباشرة
+// 1. حركة الدرج
 document.getElementById('drawerForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const type = document.getElementById('drawerTxType').value;
@@ -208,6 +174,7 @@ document.getElementById('drawerForm').addEventListener('submit', (e) => {
   addLog(type, amount, note);
   saveState();
   e.target.reset();
+  Swal.fire({ icon: 'success', title: 'تمت العملية بنجاح', timer: 1200, showConfirmButton: false });
 });
 
 // 2. أرقام الخدمة
@@ -229,6 +196,7 @@ document.getElementById('serviceForm').addEventListener('submit', (e) => {
   state.services.unshift({ id: Date.now(), num, client, cost, status });
   saveState();
   e.target.reset();
+  Swal.fire({ icon: 'success', title: 'تم حفظ الخدمة', timer: 1200, showConfirmButton: false });
 });
 
 // 3. مدينون
@@ -241,6 +209,7 @@ document.getElementById('debtorForm').addEventListener('submit', (e) => {
   state.debtors.push({ id: Date.now(), name, amount, reason });
   saveState();
   e.target.reset();
+  Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
 });
 
 function payDebtor(id) {
@@ -252,29 +221,18 @@ function payDebtor(id) {
     text: `المبلغ المتبقي: ${debtor.amount} ج.م`,
     input: 'number',
     inputValue: debtor.amount,
-    inputAttributes: {
-      min: '0.01',
-      max: debtor.amount,
-      step: 'any'
-    },
+    inputAttributes: { min: '0.01', max: debtor.amount, step: 'any' },
     showCancelButton: true,
     confirmButtonText: 'سداد',
     cancelButtonText: 'إلغاء',
     confirmButtonColor: '#10b981',
-    cancelButtonColor: '#64748b',
-    inputValidator: (value) => {
-      const val = parseFloat(value);
-      if (!val || val <= 0 || val > debtor.amount) {
-        return `يرجى إدخال مبلغ صحيح حتى ${debtor.amount} ج.م`;
-      }
-    }
+    cancelButtonColor: '#64748b'
   }).then((result) => {
     if (result.isConfirmed) {
       const payAmount = parseFloat(result.value);
       if (payAmount > 0 && payAmount <= debtor.amount) {
         debtor.amount -= payAmount;
         addLog('out', payAmount, `سداد دين لـ: ${debtor.name}`);
-
         if (debtor.amount === 0) {
           state.debtors = state.debtors.filter(d => d.id !== id);
         }
@@ -294,6 +252,7 @@ document.getElementById('creditorForm').addEventListener('submit', (e) => {
   state.creditors.push({ id: Date.now(), name, amount, reason });
   saveState();
   e.target.reset();
+  Swal.fire({ icon: 'success', title: 'تم إضافة الدائن', timer: 1200, showConfirmButton: false });
 });
 
 function collectCreditor(id) {
@@ -305,29 +264,18 @@ function collectCreditor(id) {
     text: `المبلغ المستحق: ${creditor.amount} ج.م`,
     input: 'number',
     inputValue: creditor.amount,
-    inputAttributes: {
-      min: '0.01',
-      max: creditor.amount,
-      step: 'any'
-    },
+    inputAttributes: { min: '0.01', max: creditor.amount, step: 'any' },
     showCancelButton: true,
     confirmButtonText: 'تحصيل',
     cancelButtonText: 'إلغاء',
     confirmButtonColor: '#10b981',
-    cancelButtonColor: '#64748b',
-    inputValidator: (value) => {
-      const val = parseFloat(value);
-      if (!val || val <= 0 || val > creditor.amount) {
-        return `يرجى إدخال مبلغ صحيح حتى ${creditor.amount} ج.م`;
-      }
-    }
+    cancelButtonColor: '#64748b'
   }).then((result) => {
     if (result.isConfirmed) {
       const collectAmount = parseFloat(result.value);
       if (collectAmount > 0 && collectAmount <= creditor.amount) {
         creditor.amount -= collectAmount;
         addLog('in', collectAmount, `تحصيل مستحق من: ${creditor.name}`);
-
         if (creditor.amount === 0) {
           state.creditors = state.creditors.filter(c => c.id !== id);
         }
@@ -340,7 +288,7 @@ function collectCreditor(id) {
 function deleteLog(id) {
   Swal.fire({
     title: 'حذف الحركة',
-    text: 'حذف هذه الحركة؟ (لن تتأثر بقية الجداول)',
+    text: 'هل أنت متأكد من حذف هذه الحركة؟',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
@@ -363,7 +311,7 @@ function deleteLog(id) {
 function deleteService(id) {
   Swal.fire({
     title: 'حذف الخدمة',
-    text: 'هل أنت تأكد من حذف هذه الخدمة؟',
+    text: 'هل أنت متأكد من حذف هذه الخدمة؟',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
@@ -378,7 +326,7 @@ function deleteService(id) {
   });
 }
 
-// ---------------- تحديث الواجهة وحساب الأرباح ----------------
+// ---------------- تحديث الواجهة ----------------
 function renderUI() {
   document.getElementById('drawerDisplay').textContent = `${state.drawerBalance.toFixed(2)} ج.م`;
 
@@ -414,7 +362,6 @@ function renderUI() {
   document.getElementById('servicesTableBody').innerHTML = state.services.map(s => {
     let badgeClass = 'badge-success';
     let badgeText = 'محصل بالدرج';
-
     if (s.status === 'debtor') {
       badgeClass = 'badge-danger';
       badgeText = 'مستحق (مدينون)';
@@ -422,7 +369,6 @@ function renderUI() {
       badgeClass = 'badge-warning';
       badgeText = 'مستحق (دائنون)';
     }
-
     return `
       <tr>
         <td><strong>${s.num}</strong></td>
@@ -453,5 +399,5 @@ function renderUI() {
   `).join('');
 }
 
-// بدء تحميل البيانات عند فتح الصفحة
-loadDataFromJson();
+// التشغيل الأولي
+checkAuth();

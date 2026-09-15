@@ -1,6 +1,77 @@
-// البيانات المعتمدة لتسجيل الدخول
-const AUTH_USER = "admin";
-const AUTH_PASS = "1234";
+// ---------------- التشفير وحفظ البيانات المعتمدة ----------------
+const DEFAULT_USER_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+const DEFAULT_PASS_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
+
+let authUserHash = localStorage.getItem('app_user_hash') || DEFAULT_USER_HASH;
+let authPassHash = localStorage.getItem('app_pass_hash') || DEFAULT_PASS_HASH;
+
+// دالة تشفير SHA-256 لحماية البيانات
+async function hashText(text) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// دالة لتغيير اسم المستخدم وكلمة السر
+async function changeCredentials(newUsername, newPassword) {
+  if (!newUsername || !newPassword) return;
+  
+  const newUHash = await hashText(newUsername.trim());
+  const newPHash = await hashText(newPassword.trim());
+
+  authUserHash = newUHash;
+  authPassHash = newPHash;
+
+  localStorage.setItem('app_user_hash', newUHash);
+  localStorage.setItem('app_pass_hash', newPHash);
+  sessionStorage.setItem('isLoggedIn', newPHash);
+}
+
+// معالجة نموذج تغيير البيانات (الآمن بعد إضافة التحقق)
+document.addEventListener('DOMContentLoaded', () => {
+  const authForm = document.getElementById('changeAuthForm');
+  if (authForm) {
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const currentPass = document.getElementById('currentPasswordInput') ? document.getElementById('currentPasswordInput').value.trim() : '';
+      const newUsers = document.getElementById('newUsernameInput').value.trim();
+      const newPass = document.getElementById('newPasswordInput').value.trim();
+
+      if ((document.getElementById('currentPasswordInput') && !currentPass) || !newUsers || !newPass) {
+        Swal.fire('تنبيه', 'يرجى إدخال جميع البيانات المطلوبة', 'warning');
+        return;
+      }
+
+      // التحقق من صحة كلمة السر الحالية
+      if (document.getElementById('currentPasswordInput')) {
+        const inputCurrentHash = await hashText(currentPass);
+        if (inputCurrentHash !== authPassHash) {
+          Swal.fire({
+            icon: 'error',
+            title: 'خطأ!',
+            text: 'كلمة السر الحالية غير صحيحة، لا يمكنك تغيير البيانات.',
+            confirmButtonColor: '#ef4444'
+          });
+          return;
+        }
+      }
+
+      await changeCredentials(newUsers, newPass);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'تم التحديث بنجاح!',
+        text: 'تم تغيير اسم المستخدم وكلمة السر بنجاح.',
+        confirmButtonColor: '#10b981'
+      });
+
+      authForm.reset();
+    });
+  }
+});
 
 // حالة بيانات النظام
 let state = {
@@ -13,14 +84,17 @@ let state = {
 
 // ---------------- نظام تسجيل الدخول ----------------
 
-document.getElementById('loginForm').addEventListener('submit', (e) => {
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const user = document.getElementById('usernameInput').value.trim();
   const pass = document.getElementById('passwordInput').value.trim();
   const errorMsg = document.getElementById('loginError');
 
-  if (user === AUTH_USER && pass === AUTH_PASS) {
-    sessionStorage.setItem('isLoggedIn', 'true');
+  const inputUserHash = await hashText(user);
+  const inputPassHash = await hashText(pass);
+
+  if (inputUserHash === authUserHash && inputPassHash === authPassHash) {
+    sessionStorage.setItem('isLoggedIn', inputPassHash);
     errorMsg.style.display = 'none';
     e.target.reset();
     checkAuth();
@@ -48,7 +122,7 @@ function logout() {
 }
 
 function checkAuth() {
-  const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+  const isLoggedIn = sessionStorage.getItem('isLoggedIn') === authPassHash;
   const loginSec = document.getElementById('loginSection');
   const appSec = document.getElementById('appSection');
 
@@ -74,12 +148,25 @@ function saveState() {
 }
 
 function switchTab(e, tabId) {
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+  if (e) e.preventDefault();
   
-  e.currentTarget.classList.add('active');
-  document.getElementById(tabId).classList.add('active');
-  document.getElementById('pageTitle').textContent = e.currentTarget.textContent;
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.section-view').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+
+  if (e && e.currentTarget) {
+    e.currentTarget.classList.add('active');
+    const pageTitle = document.getElementById('pageTitle');
+    if (pageTitle) pageTitle.textContent = e.currentTarget.textContent.replace('⚙️ ', '');
+  }
+
+  const target = document.getElementById(tabId);
+  if (target) {
+    target.classList.add('active');
+    target.style.display = 'block';
+  }
 }
 
 function addLog(type, amount, note) {
@@ -277,33 +364,27 @@ function deleteService(id) {
 
 // ---------------- تحديث الواجهة وحساب الأرباح ----------------
 function renderUI() {
-  // رصيد الدرج
   document.getElementById('drawerDisplay').textContent = `${state.drawerBalance.toFixed(2)} ج.م`;
 
-  // 1. حساب إجمالي الإيرادات (مجموع القيم لجميع الخدمات)
   const totalRevenues = state.services.reduce((sum, item) => sum + item.cost, 0);
   document.getElementById('totalRevenuesDisplay').textContent = `${totalRevenues.toFixed(2)} ج.م`;
 
-  // 2. حساب إجمالي المصروفات والسحوبات من اليومية
   const totalExpenses = state.logs
     .filter(log => log.type === 'out')
     .reduce((sum, log) => sum + log.amount, 0);
   document.getElementById('totalExpensesDisplay').textContent = `${totalExpenses.toFixed(2)} ج.م`;
 
-  // 3. حساب صافي الربح (الإيرادات - المصروفات)
   const netProfit = totalRevenues - totalExpenses;
   const netProfitEl = document.getElementById('netProfitDisplay');
   netProfitEl.textContent = `${netProfit.toFixed(2)} ج.م`;
   netProfitEl.className = `card-value ${netProfit >= 0 ? 'success-text' : 'danger-text'}`;
 
-  // حساب إجمالي المدينين والدائنين
   const totalDebtors = state.debtors.reduce((sum, item) => sum + item.amount, 0);
   document.getElementById('totalDebtorsDisplay').textContent = `${totalDebtors.toFixed(2)} ج.م`;
 
   const totalCreditors = state.creditors.reduce((sum, item) => sum + item.amount, 0);
   document.getElementById('totalCreditorsDisplay').textContent = `${totalCreditors.toFixed(2)} ج.م`;
 
-  // عرض جدول حركة الدرج
   document.getElementById('drawerTableBody').innerHTML = state.logs.map(log => `
     <tr>
       <td>${log.time}</td>
@@ -314,7 +395,6 @@ function renderUI() {
     </tr>
   `).join('');
 
-  // عرض جدول الخدمات
   document.getElementById('servicesTableBody').innerHTML = state.services.map(s => {
     let badgeClass = 'badge-success';
     let badgeText = 'محصل بالدرج';
@@ -338,7 +418,6 @@ function renderUI() {
     `;
   }).join('');
 
-  // عرض جدول مدينون
   document.getElementById('debtorsTableBody').innerHTML = state.debtors.map(d => `
     <tr>
       <td><strong>${d.name}</strong></td>
@@ -348,7 +427,6 @@ function renderUI() {
     </tr>
   `).join('');
 
-  // عرض جدول دائنون
   document.getElementById('creditorsTableBody').innerHTML = state.creditors.map(c => `
     <tr>
       <td><strong>${c.name}</strong></td>
@@ -359,5 +437,4 @@ function renderUI() {
   `).join('');
 }
 
-// التحقق من الجلسة عند تحميل الصفحة
 checkAuth();

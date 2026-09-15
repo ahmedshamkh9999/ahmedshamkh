@@ -46,6 +46,10 @@
         <li class="nav-item">
           <a class="nav-link" onclick="switchTab(event, 'creditorsTab')">دائنون</a>
         </li>
+        <!-- تم إضافة زر إعدادات الحساب هنا -->
+        <li class="nav-item">
+          <a class="nav-link" onclick="switchTab(event, 'settingsTab')">⚙️ إعدادات الحساب</a>
+        </li>
       </ul>
       <div class="sidebar-footer">
         <button class="btn-danger btn-logout" onclick="logout()">تسجيل الخروج</button>
@@ -135,7 +139,7 @@
           </table>
         </div>
 
-        <!-- 3. قسم الأرباح والإيرادات (الزر الجديد) -->
+        <!-- 3. قسم الأرباح والإيرادات -->
         <div id="reportsTab" class="section-view">
           <div class="grid-cards">
             <div class="card">
@@ -203,13 +207,36 @@
           </table>
         </div>
 
+        <!-- 6. قسم إعدادات الحساب (تم إضافة حقل كلمة السر الحالية) -->
+        <div id="settingsTab" class="section-view">
+          <div class="form-container" style="max-width: 500px; margin: 0 auto;">
+            <h3>تغيير بيانات الدخول</h3>
+            <form id="changeAuthForm">
+              <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">كلمة السر الحالية:</label>
+                <input type="password" id="currentPasswordInput" placeholder="أدخل كلمة السر الحالية للتأكيد" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+              </div>
+              <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+              <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">اسم المستخدم الجديد:</label>
+                <input type="text" id="newUsernameInput" placeholder="أدخل اسم المستخدم الجديد" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+              </div>
+              <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">كلمة السر الجديدة:</label>
+                <input type="password" id="newPasswordInput" placeholder="أدخل كلمة السر الجديدة" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+              </div>
+              <button type="submit" style="width: 100%; padding: 12px; cursor: pointer;">تحديث البيانات</button>
+            </form>
+          </div>
+        </div>
+
       </div>
 
       <!-- الفوتر -->
       <footer class="app-footer">
         <div class="footer-content">
           <p>جميع الحقوق محفوظة &copy; 2026 <strong>نظام الفرع</strong></p>
-          <p class="dev-tag">تطوير بواسطة: <span>أحمد شمخ</span> | الإصدار 1.0.0</p>
+          <p class="dev-tag">تطوير بواسطة: <span>أحمد شمخ</span> | الإصدار 1.2.0</p>
         </div>
       </footer>
 

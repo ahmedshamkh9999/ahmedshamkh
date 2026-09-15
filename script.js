@@ -4,6 +4,7 @@ const DEFAULT_PASS_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f
 let authUserHash = localStorage.getItem('app_user_hash') || DEFAULT_USER_HASH;
 let authPassHash = localStorage.getItem('app_pass_hash') || DEFAULT_PASS_HASH;
 
+// دالة تشفير SHA-256 للحماية
 async function hashText(text) {
   const encoder = new TextEncoder();
   const data = encoder.encode(text);
@@ -12,64 +13,162 @@ async function hashText(text) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// حقن أزرار المزامنة مباشرة في أعلى صفحة التطبيق لضمان ظهورها للجميع
+// دالة تحميل مكتبات خارجية (ل والباركود والكاميرا) تلقائياً
+function loadScript(url, callback) {
+  if (document.querySelector(`script[src="${url}"]`)) {
+    if (callback) callback();
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = url;
+  script.onload = callback;
+  document.head.appendChild(script);
+}
+
+// دالة تغيير بيانات الدخول
+async function changeCredentials(newUsername, newPassword) {
+  if (!newUsername || !newPassword) return;
+  const newUHash = await hashText(newUsername.trim());
+  const newPHash = await hashText(newPassword.trim());
+
+  authUserHash = newUHash;
+  authPassHash = newPHash;
+
+  localStorage.setItem('app_user_hash', newUHash);
+  localStorage.setItem('app_pass_hash', newPHash);
+  sessionStorage.setItem('isLoggedIn', newPHash);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  const appSection = document.getElementById('appSection');
-  if (appSection && !document.getElementById('fixedSyncBar')) {
-    const syncBar = document.createElement('div');
-    syncBar.id = 'fixedSyncBar';
-    syncBar.style.cssText = 'background: #1e293b; padding: 12px; margin-bottom: 15px; border-radius: 8px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; border: 1px solid #334155;';
-    syncBar.innerHTML = `
-      <span style="color: #38bdf8; font-weight: bold; font-size: 14px;">🔄 شريط المزامنة السريعة:</span>
-      <div style="display: flex; gap: 8px; flex: 1; min-width: 250px;">
-        <button type="button" id="globalExportBtn" style="flex:1; background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">📤 نسخ كود المزامنة</button>
-        <button type="button" id="globalImportBtn" style="flex:1; background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">📥 لصق كود المزامنة</button>
-      </div>
-    `;
-    appSection.insertBefore(syncBar, appSection.firstChild);
+  const authForm = document.getElementById('changeAuthForm');
+  if (authForm) {
+    // إضافة أزرار مزامنة الباركود تلقائياً داخل صفحة الإعدادات
+    if (!document.getElementById('qrSyncContainer')) {
+      const qrDiv = document.createElement('div');
+      qrDiv.id = 'qrSyncContainer';
+      qrDiv.style.marginTop = '25px';
+      qrDiv.style.paddingTop = '20px';
+      qrDiv.style.borderTop = '1px solid #334155';
+      qrDiv.innerHTML = `
+        <h3 style="color: #f8fafc; margin-bottom: 8px; font-size: 1.1rem;">🔄 مزامنة فورية بالباركود (QR Code)</h3>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">انقل العمليات من الموبايل للكمبيوتر بضغطة زر وبدون ملفات.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="button" id="showQrBtn" class="btn-success" style="flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📱 إظهار باركود (للموبايل)</button>
+          <button type="button" id="scanQrBtn" class="btn-primary" style="flex: 1; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📷 مسح باركود (للكمبيوتر)</button>
+        </div>
+      `;
+      authForm.parentNode.appendChild(qrDiv);
 
-    // حدث زر التصدير/النسخ
-    document.getElementById('globalExportBtn').addEventListener('click', () => {
-      const syncData = {
-        d: localStorage.getItem('br_drawer'),
-        l: localStorage.getItem('br_logs'),
-        s: localStorage.getItem('br_services'),
-        db: localStorage.getItem('br_debtors'),
-        cr: localStorage.getItem('br_creditors'),
-        u: localStorage.getItem('app_user_hash'),
-        p: localStorage.getItem('app_pass_hash')
-      };
-      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(syncData))));
-      
-      // محاولة النسخ التلقائي أو إظهار الكود بنص واضح
-      navigator.clipboard.writeText(encoded).then(() => {
-        alert('✅ تم نسخ كود المزامنة إلى الحافظة بنجاح!\n\nقم بلصقه في الجهاز الآخر.');
-      }).catch(() => {
-        prompt("نسخ الكود يدويًا (حدد الكل واضغط نسخ):", encoded);
+      // ربط زر إظهار الباركود (للموبايل)
+      document.getElementById('showQrBtn').addEventListener('click', () => {
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js', () => {
+          const syncData = {
+            d: localStorage.getItem('br_drawer'),
+            l: localStorage.getItem('br_logs'),
+            s: localStorage.getItem('br_services'),
+            db: localStorage.getItem('br_debtors'),
+            cr: localStorage.getItem('br_creditors'),
+            u: localStorage.getItem('app_user_hash'),
+            p: localStorage.getItem('app_pass_hash')
+          };
+          const jsonStr = JSON.stringify(syncData);
+
+          Swal.fire({
+            title: 'باركود مزامنة الفرع',
+            html: `
+              <div id="qrcodeBox" style="display: flex; justify-content: center; margin: 15px 0; background: white; padding: 15px; border-radius: 8px;"></div>
+              <p style="color: #94a3b8; font-size: 13px;">افتح موقع الفرع من الكمبيوتر، اضغط مسح باركود، ووجه الكاميرا هنا.</p>
+            `,
+            didOpen: () => {
+              document.getElementById('qrcodeBox').innerHTML = '';
+              new QRCode(document.getElementById('qrcodeBox'), {
+                text: jsonStr,
+                width: 230,
+                height: 230
+              });
+            },
+            confirmButtonText: 'إغلاق',
+            confirmButtonColor: '#3b82f6'
+          });
+        });
       });
-    });
 
-    // حدث زر الاستيراد/اللصق
-    document.getElementById('globalImportBtn').addEventListener('click', () => {
-      const inputCode = prompt("الرجاء لصق كود المزامنة هنا:");
-      if (!inputCode) return;
-      try {
-        const decoded = decodeURIComponent(escape(atob(inputCode.trim())));
-        const data = JSON.parse(decoded);
+      // ربط زر مسح الباركود (للكمبيوتر)
+      document.getElementById('scanQrBtn').addEventListener('click', () => {
+        loadScript('https://unpkg.com/html5-qrcode', () => {
+          Swal.fire({
+            title: 'وجه كاميرا الكمبيوتر نحو الموبايل',
+            html: '<div id="reader" style="width: 100%; max-width: 280px; margin: auto;"></div>',
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'إلغاء',
+            cancelButtonColor: '#ef4444',
+            didOpen: () => {
+              const html5QrCode = new Html5Qrcode("reader");
+              html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 220, height: 220 } },
+                (decodedText) => {
+                  html5QrCode.stop().then(() => {
+                    try {
+                      const data = JSON.parse(decodedText);
+                      if (data.d !== undefined) localStorage.setItem('br_drawer', data.d);
+                      if (data.l) localStorage.setItem('br_logs', data.l);
+                      if (data.s) localStorage.setItem('br_services', data.s);
+                      if (data.db) localStorage.setItem('br_debtors', data.db);
+                      if (data.cr) localStorage.setItem('br_creditors', data.cr);
+                      if (data.u) localStorage.setItem('app_user_hash', data.u);
+                      if (data.p) localStorage.setItem('app_pass_hash', data.p);
 
-        if (data.d !== undefined) localStorage.setItem('br_drawer', data.d);
-        if (data.l) localStorage.setItem('br_logs', data.l);
-        if (data.s) localStorage.setItem('br_services', data.s);
-        if (data.db) localStorage.setItem('br_debtors', data.db);
-        if (data.cr) localStorage.setItem('br_creditors', data.cr);
-        if (data.u) localStorage.setItem('app_user_hash', data.u);
-        if (data.p) localStorage.setItem('app_pass_hash', data.p);
+                      Swal.fire({
+                        icon: 'success',
+                        title: 'تمت المزامنة الفورية بنجاح!',
+                        text: 'جاري تحديث بيانات الكمبيوتر...',
+                        timer: 1500,
+                        showConfirmButton: false
+                      }).then(() => {
+                        location.reload();
+                      });
+                    } catch (err) {
+                      Swal.fire('خطأ', 'باركود غير صالح، تأكد من مسح باركود النظام الصحيح.', 'error');
+                    }
+                  }).catch(() => {});
+                },
+                () => {}
+              ).catch(() => {
+                Swal.fire('تعذر تشغيل الكاميرا', 'تأكد من السماح للمتصفح بالوصول للكاميرا.', 'error');
+              });
+            },
+            willClose: () => {
+              // محاولة إيقاف الماسح عند الإغلاق اليدوي إن وجد
+            }
+          });
+        });
+      });
+    }
 
-        alert('🎉 تمت المزامنة وتحديث البيانات بنجاح!');
-        location.reload();
-      } catch (err) {
-        alert('❌ خطأ: الكود غير صالح أو غير مكتمل، تأكد من نسخه كاملاً.');
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const currentPass = document.getElementById('currentPasswordInput') ? document.getElementById('currentPasswordInput').value.trim() : '';
+      const newUsers = document.getElementById('newUsernameInput').value.trim();
+      const newPass = document.getElementById('newPasswordInput').value.trim();
+
+      if ((document.getElementById('currentPasswordInput') && !currentPass) || !newUsers || !newPass) {
+        Swal.fire('تنبيه', 'يرجى إدخال جميع البيانات المطلوبة', 'warning');
+        return;
       }
+
+      if (document.getElementById('currentPasswordInput')) {
+        const inputCurrentHash = await hashText(currentPass);
+        if (inputCurrentHash !== authPassHash) {
+          Swal.fire({ icon: 'error', title: 'خطأ!', text: 'كلمة السر الحالية غير صحيحة.', confirmButtonColor: '#ef4444' });
+          return;
+        }
+      }
+
+      await changeCredentials(newUsers, newPass);
+      Swal.fire({ icon: 'success', title: 'تم التحديث بنجاح!', text: 'تم تغيير بيانات الدخول.', confirmButtonColor: '#10b981' });
+      authForm.reset();
     });
   }
 });
@@ -83,7 +182,7 @@ let state = {
   creditors: JSON.parse(localStorage.getItem('br_creditors')) || []
 };
 
-// نظام تسجيل الدخول
+// ---------------- نظام تسجيل الدخول ----------------
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const user = document.getElementById('usernameInput').value.trim();
@@ -104,10 +203,21 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 });
 
 function logout() {
-  if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-    sessionStorage.removeItem('isLoggedIn');
-    checkAuth();
-  }
+  Swal.fire({
+    title: 'تسجيل الخروج',
+    text: 'هل أنت متأكد من تسجيل الخروج؟',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'نعم، خروج',
+    cancelButtonText: 'إلغاء'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      sessionStorage.removeItem('isLoggedIn');
+      checkAuth();
+    }
+  });
 }
 
 function checkAuth() {
@@ -125,6 +235,7 @@ function checkAuth() {
   }
 }
 
+// ---------------- حفظ البيانات ----------------
 function saveState() {
   localStorage.setItem('br_drawer', state.drawerBalance);
   localStorage.setItem('br_logs', JSON.stringify(state.logs));
@@ -134,8 +245,10 @@ function saveState() {
   renderUI();
 }
 
+// ---------------- التنقل بين التبويبات ----------------
 function switchTab(e, tabId) {
   if (e) e.preventDefault();
+  
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   document.querySelectorAll('.section-view').forEach(s => {
     s.classList.remove('active');
@@ -178,7 +291,7 @@ document.getElementById('drawerForm').addEventListener('submit', (e) => {
   addLog(type, amount, note);
   saveState();
   e.target.reset();
-  alert('تمت العملية بنجاح');
+  Swal.fire({ icon: 'success', title: 'تمت العملية بنجاح', timer: 1200, showConfirmButton: false });
 });
 
 // 2. أرقام الخدمة
@@ -200,7 +313,7 @@ document.getElementById('serviceForm').addEventListener('submit', (e) => {
   state.services.unshift({ id: Date.now(), num, client, cost, status });
   saveState();
   e.target.reset();
-  alert('تم حفظ الخدمة');
+  Swal.fire({ icon: 'success', title: 'تم حفظ الخدمة', timer: 1200, showConfirmButton: false });
 });
 
 // 3. مدينون
@@ -213,22 +326,37 @@ document.getElementById('debtorForm').addEventListener('submit', (e) => {
   state.debtors.push({ id: Date.now(), name, amount, reason });
   saveState();
   e.target.reset();
-  alert('تم إضافة المدين');
+  Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
 });
 
 function payDebtor(id) {
   const debtor = state.debtors.find(d => d.id === id);
   if (!debtor) return;
 
-  const payAmount = parseFloat(prompt(`سداد دين لـ (${debtor.name})\nالمبلغ المتبقي: ${debtor.amount} ج.م\nأدخل مبلغ السداد:`, debtor.amount));
-  if (payAmount > 0 && payAmount <= debtor.amount) {
-    debtor.amount -= payAmount;
-    addLog('out', payAmount, `سداد دين لـ: ${debtor.name}`);
-    if (debtor.amount === 0) {
-      state.debtors = state.debtors.filter(d => d.id !== id);
+  Swal.fire({
+    title: `سداد دين لـ (${debtor.name})`,
+    text: `المبلغ المتبقي: ${debtor.amount} ج.م`,
+    input: 'number',
+    inputValue: debtor.amount,
+    inputAttributes: { min: '0.01', max: debtor.amount, step: 'any' },
+    showCancelButton: true,
+    confirmButtonText: 'سداد',
+    cancelButtonText: 'إلغاء',
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#64748b'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const payAmount = parseFloat(result.value);
+      if (payAmount > 0 && payAmount <= debtor.amount) {
+        debtor.amount -= payAmount;
+        addLog('out', payAmount, `سداد دين لـ: ${debtor.name}`);
+        if (debtor.amount === 0) {
+          state.debtors = state.debtors.filter(d => d.id !== id);
+        }
+        saveState();
+      }
     }
-    saveState();
-  }
+  });
 }
 
 // 4. دائنون
@@ -241,133 +369,152 @@ document.getElementById('creditorForm').addEventListener('submit', (e) => {
   state.creditors.push({ id: Date.now(), name, amount, reason });
   saveState();
   e.target.reset();
-  alert('تم إضافة الدائن');
+  Swal.fire({ icon: 'success', title: 'تم إضافة الدائن', timer: 1200, showConfirmButton: false });
 });
 
 function collectCreditor(id) {
   const creditor = state.creditors.find(c => c.id === id);
   if (!creditor) return;
 
-  const collectAmount = parseFloat(prompt(`تحصيل مبلغ من (${creditor.name})\nالمبلغ المستحق: ${creditor.amount} ج.م\nأدخل مبلغ التحصيل:`, creditor.amount));
-  if (collectAmount > 0 && collectAmount <= creditor.amount) {
-    creditor.amount -= collectAmount;
-    addLog('in', collectAmount, `تحصيل مستحق من: ${creditor.name}`);
-    if (creditor.amount === 0) {
-      state.creditors = state.creditors.filter(c => c.id !== id);
+  Swal.fire({
+    title: `تحصيل مبلغ من (${creditor.name})`,
+    text: `المبلغ المستحق: ${creditor.amount} ج.م`,
+    input: 'number',
+    inputValue: creditor.amount,
+    inputAttributes: { min: '0.01', max: creditor.amount, step: 'any' },
+    showCancelButton: true,
+    confirmButtonText: 'تحصيل',
+    cancelButtonText: 'إلغاء',
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#64748b'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const collectAmount = parseFloat(result.value);
+      if (collectAmount > 0 && collectAmount <= creditor.amount) {
+        creditor.amount -= collectAmount;
+        addLog('in', collectAmount, `تحصيل مستحق من: ${creditor.name}`);
+        if (creditor.amount === 0) {
+          state.creditors = state.creditors.filter(c => c.id !== id);
+        }
+        saveState();
+      }
     }
-    saveState();
-  }
+  });
 }
 
 function deleteLog(id) {
-  if (confirm('هل أنت متأكد من حذف هذه الحركة؟')) {
-    const log = state.logs.find(l => l.id === id);
-    if (log) {
-      if (log.type === 'in') state.drawerBalance -= log.amount;
-      if (log.type === 'out') state.drawerBalance += log.amount;
-      state.logs = state.logs.filter(l => l.id !== id);
-      saveState();
+  Swal.fire({
+    title: 'حذف الحركة',
+    text: 'هل أنت متأكد من حذف هذه الحركة؟',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'نعم، احذف',
+    cancelButtonText: 'إلغاء'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const log = state.logs.find(l => l.id === id);
+      if (log) {
+        if (log.type === 'in') state.drawerBalance -= log.amount;
+        if (log.type === 'out') state.drawerBalance += log.amount;
+        state.logs = state.logs.filter(l => l.id !== id);
+        saveState();
+      }
     }
-  }
+  });
 }
 
 function deleteService(id) {
-  if (confirm('هل أنت متأكد من حذف هذه الخدمة؟')) {
-    state.services = state.services.filter(s => s.id !== id);
-    saveState();
-  }
+  Swal.fire({
+    title: 'حذف الخدمة',
+    text: 'هل أنت متأكد من حذف هذه الخدمة؟',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'نعم، احذف',
+    cancelButtonText: 'إلغاء'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      state.services = state.services.filter(s => s.id !== id);
+      saveState();
+    }
+  });
 }
 
-// تحديث الواجهة
+// ---------------- تحديث الواجهة ----------------
 function renderUI() {
-  const drawerDisplay = document.getElementById('drawerDisplay');
-  if (drawerDisplay) drawerDisplay.textContent = `${state.drawerBalance.toFixed(2)} ج.م`;
+  document.getElementById('drawerDisplay').textContent = `${state.drawerBalance.toFixed(2)} ج.م`;
 
   const totalRevenues = state.services.reduce((sum, item) => sum + item.cost, 0);
-  const trEl = document.getElementById('totalRevenuesDisplay');
-  if (trEl) trEl.textContent = `${totalRevenues.toFixed(2)} ج.م`;
+  document.getElementById('totalRevenuesDisplay').textContent = `${totalRevenues.toFixed(2)} ج.م`;
 
   const totalExpenses = state.logs
     .filter(log => log.type === 'out')
     .reduce((sum, log) => sum + log.amount, 0);
-  const teEl = document.getElementById('totalExpensesDisplay');
-  if (teEl) teEl.textContent = `${totalExpenses.toFixed(2)} ج.م`;
+  document.getElementById('totalExpensesDisplay').textContent = `${totalExpenses.toFixed(2)} ج.م`;
 
   const netProfit = totalRevenues - totalExpenses;
   const netProfitEl = document.getElementById('netProfitDisplay');
-  if (netProfitEl) {
-    netProfitEl.textContent = `${netProfit.toFixed(2)} ج.م`;
-    netProfitEl.className = `card-value ${netProfit >= 0 ? 'success-text' : 'danger-text'}`;
-  }
+  netProfitEl.textContent = `${netProfit.toFixed(2)} ج.م`;
+  netProfitEl.className = `card-value ${netProfit >= 0 ? 'success-text' : 'danger-text'}`;
 
   const totalDebtors = state.debtors.reduce((sum, item) => sum + item.amount, 0);
-  const tdEl = document.getElementById('totalDebtorsDisplay');
-  if (tdEl) tdEl.textContent = `${totalDebtors.toFixed(2)} ج.م`;
+  document.getElementById('totalDebtorsDisplay').textContent = `${totalDebtors.toFixed(2)} ج.م`;
 
   const totalCreditors = state.creditors.reduce((sum, item) => sum + item.amount, 0);
-  const tcEl = document.getElementById('totalCreditorsDisplay');
-  if (tcEl) tcEl.textContent = `${totalCreditors.toFixed(2)} ج.م`;
+  document.getElementById('totalCreditorsDisplay').textContent = `${totalCreditors.toFixed(2)} ج.م`;
 
-  const dtBody = document.getElementById('drawerTableBody');
-  if (dtBody) {
-    dtBody.innerHTML = state.logs.map(log => `
+  document.getElementById('drawerTableBody').innerHTML = state.logs.map(log => `
+    <tr>
+      <td>${log.time}</td>
+      <td><span class="badge ${log.type === 'in' ? 'badge-success' : 'badge-danger'}">${log.type === 'in' ? 'إيداع (+)' : 'سحب (-)'}</span></td>
+      <td><strong>${log.amount.toFixed(2)} ج.م</strong></td>
+      <td>${log.note}</td>
+      <td><button class="btn-danger btn-small" onclick="deleteLog(${log.id})">حذف</button></td>
+    </tr>
+  `).join('');
+
+  document.getElementById('servicesTableBody').innerHTML = state.services.map(s => {
+    let badgeClass = 'badge-success';
+    let badgeText = 'محصل بالدرج';
+    if (s.status === 'debtor') {
+      badgeClass = 'badge-danger';
+      badgeText = 'مستحق (مدينون)';
+    } else if (s.status === 'creditor' || s.status === 'debt') {
+      badgeClass = 'badge-warning';
+      badgeText = 'مستحق (دائنون)';
+    }
+    return `
       <tr>
-        <td>${log.time}</td>
-        <td><span class="badge ${log.type === 'in' ? 'badge-success' : 'badge-danger'}">${log.type === 'in' ? 'إيداع (+)' : 'سحب (-)'}</span></td>
-        <td><strong>${log.amount.toFixed(2)} ج.م</strong></td>
-        <td>${log.note}</td>
-        <td><button class="btn-danger btn-small" onclick="deleteLog(${log.id})">حذف</button></td>
+        <td><strong>${s.num}</strong></td>
+        <td>${s.client}</td>
+        <td>${s.cost.toFixed(2)} ج.م</td>
+        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+        <td><button class="btn-danger btn-small" onclick="deleteService(${s.id})">حذف</button></td>
       </tr>
-    `).join('');
-  }
+    `;
+  }).join('');
 
-  const stBody = document.getElementById('servicesTableBody');
-  if (stBody) {
-    stBody.innerHTML = state.services.map(s => {
-      let badgeClass = 'badge-success';
-      let badgeText = 'محصل بالدرج';
-      if (s.status === 'debtor') {
-        badgeClass = 'badge-danger';
-        badgeText = 'مستحق (مدينون)';
-      } else if (s.status === 'creditor' || s.status === 'debt') {
-        badgeClass = 'badge-warning';
-        badgeText = 'مستحق (دائنون)';
-      }
-      return `
-        <tr>
-          <td><strong>${s.num}</strong></td>
-          <td>${s.client}</td>
-          <td>${s.cost.toFixed(2)} ج.م</td>
-          <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-          <td><button class="btn-danger btn-small" onclick="deleteService(${s.id})">حذف</button></td>
-        </tr>
-      `;
-    }).join('');
-  }
+  document.getElementById('debtorsTableBody').innerHTML = state.debtors.map(d => `
+    <tr>
+      <td><strong>${d.name}</strong></td>
+      <td class="danger-text" style="font-weight: bold;">${d.amount.toFixed(2)} ج.م</td>
+      <td>${d.reason}</td>
+      <td><button class="btn-success" onclick="payDebtor(${d.id})">سداد من الدرج</button></td>
+    </tr>
+  `).join('');
 
-  const debtBody = document.getElementById('debtorsTableBody');
-  if (debtBody) {
-    debtBody.innerHTML = state.debtors.map(d => `
-      <tr>
-        <td><strong>${d.name}</strong></td>
-        <td class="danger-text" style="font-weight: bold;">${d.amount.toFixed(2)} ج.م</td>
-        <td>${d.reason}</td>
-        <td><button class="btn-success" onclick="payDebtor(${d.id})">سداد من الدرج</button></td>
-      </tr>
-    `).join('');
-  }
-
-  const credBody = document.getElementById('creditorsTableBody');
-  if (credBody) {
-    credBody.innerHTML = state.creditors.map(c => `
-      <tr>
-        <td><strong>${c.name}</strong></td>
-        <td class="success-text" style="font-weight: bold;">${c.amount.toFixed(2)} ج.م</td>
-        <td>${c.reason}</td>
-        <td><button class="btn-success" onclick="collectCreditor(${c.id})">تحصيل للدرج</button></td>
-      </tr>
-    `).join('');
-  }
+  document.getElementById('creditorsTableBody').innerHTML = state.creditors.map(c => `
+    <tr>
+      <td><strong>${c.name}</strong></td>
+      <td class="success-text" style="font-weight: bold;">${c.amount.toFixed(2)} ج.م</td>
+      <td>${c.reason}</td>
+      <td><button class="btn-success" onclick="collectCreditor(${c.id})">تحصيل للدرج</button></td>
+    </tr>
+  `).join('');
 }
 
+// التشغيل الأولي
 checkAuth();

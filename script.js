@@ -54,6 +54,17 @@ document.addEventListener('DOMContentLoaded', () => {
       authForm.reset();
     });
   }
+
+  // ربط زر "ابدأ الآن" بشاشة تسجيل الدخول
+  const startBtn = document.getElementById('startBtn');
+  if (startBtn) {
+    startBtn.addEventListener('click', function() {
+      const welcomeSec = document.getElementById('welcomeSection');
+      const loginSec = document.getElementById('loginSection');
+      if (welcomeSec) welcomeSec.style.display = 'none';
+      if (loginSec) loginSec.classList.remove('hidden');
+    });
+  }
 });
 
 // حالة بيانات النظام
@@ -98,6 +109,9 @@ function logout() {
   }).then((result) => {
     if (result.isConfirmed) {
       sessionStorage.removeItem('isLoggedIn');
+      // عند تسجيل الخروج، نعيد إظهار شاشة البداية وتخفي التطبيق
+      const welcomeSec = document.getElementById('welcomeSection');
+      if (welcomeSec) welcomeSec.style.display = 'flex';
       checkAuth();
     }
   });
@@ -105,16 +119,19 @@ function logout() {
 
 function checkAuth() {
   const isLoggedIn = sessionStorage.getItem('isLoggedIn') === authPassHash;
+  const welcomeSec = document.getElementById('welcomeSection');
   const loginSec = document.getElementById('loginSection');
   const appSec = document.getElementById('appSection');
 
   if (isLoggedIn) {
-    loginSec.classList.add('hidden');
-    appSec.classList.remove('hidden');
+    if (welcomeSec) welcomeSec.style.display = 'none';
+    if (loginSec) loginSec.classList.add('hidden');
+    if (appSec) appSec.classList.remove('hidden');
     renderUI();
   } else {
-    loginSec.classList.remove('hidden');
-    appSec.classList.add('hidden');
+    // لو مش مسجل دخول، نقدر نخلي شاشة البداية تظهر الأول، أو لو حابب تظهر شاشة الدخول مباشرة
+    if (appSec) appSec.classList.add('hidden');
+    // لو حابب أول ما يفتح تظهر شاشة البداية سيبها زي ما هي، ولما يدوس ابدأ تظهر شاشة الدخول
   }
 }
 

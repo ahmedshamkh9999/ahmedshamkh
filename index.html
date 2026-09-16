@@ -12,8 +12,18 @@
 
 <body>
 
-  <!-- شاشة تسجيل الدخول -->
-  <div id="loginSection" class="login-wrapper">
+  <!-- 1. شاشة البداية الترحيبية (تظهر أولاً) -->
+  <div id="welcomeSection" class="login-wrapper">
+    <div class="login-card" style="text-align: center;">
+      <img src="فوري.jpeg" alt="لوجو الفرع" class="login-logo" onerror="this.style.display='none'">
+      <h2>نظام الفرع</h2>
+      <h3 style="color: #666; font-size: 15px; margin-bottom: 25px;">Welcome to System The Branch</h3>
+      <button type="button" id="startBtn" style="width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">ابدأ الآن</button>
+    </div>
+  </div>
+
+  <!-- 2. شاشة تسجيل الدخول (مخفية في البداية) -->
+  <div id="loginSection" class="login-wrapper hidden">
     <div class="login-card">
       <img src="فوري.jpeg" alt="لوجو الفرع" class="login-logo" onerror="this.style.display='none'">
       <h2>نظام الفرع</h2>
@@ -27,7 +37,7 @@
     </div>
   </div>
 
-  <!-- التطبيق الرئيسي -->
+  <!-- التطبيق الرئيسي (مخفي حتى يتم تسجيل الدخول) -->
   <div id="appSection" class="app-wrapper hidden">
     <!-- القائمة الجانبية -->
     <div class="sidebar">
@@ -48,7 +58,6 @@
         <li class="nav-item">
           <a class="nav-link" onclick="switchTab(event, 'creditorsTab')">دائنون</a>
         </li>
-        <!-- تم إضافة زر إعدادات الحساب هنا -->
         <li class="nav-item">
           <a class="nav-link" onclick="switchTab(event, 'settingsTab')"> إعدادات الحساب</a>
         </li>
@@ -66,7 +75,7 @@
 
       <div class="content-area">
 
-        <!-- 1. قسم يومية الحساب (الدرج) -->
+        <!-- 1. قسم يومية الحساب -->
         <div id="drawerTab" class="section-view active">
           <div class="grid-cards">
             <div class="card">
@@ -209,7 +218,7 @@
           </table>
         </div>
 
-        <!-- 6. قسم إعدادات الحساب (تم إضافة حقل كلمة السر الحالية) -->
+        <!-- 6. قسم إعدادات الحساب -->
         <div id="settingsTab" class="section-view">
           <div class="form-container" style="max-width: 500px; margin: 0 auto;">
             <h3>تغيير بيانات الدخول</h3>

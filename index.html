@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,7 +35,6 @@
       <div id="loginError" class="error-msg">برجاء ادخل البيانات صحيحه </div>
     </div>
   </div>
-
   <!-- التطبيق الرئيسي (مخفي حتى يتم تسجيل الدخول) -->
   <div id="appSection" class="app-wrapper hidden">
     <!-- القائمة الجانبية -->
@@ -61,6 +59,11 @@
         <li class="nav-item">
           <a class="nav-link" onclick="switchTab(event, 'settingsTab')"> إعدادات الحساب</a>
         </li>
+        <p>
+          ملحوظه:تمني لكم تجربه سعيده لنظام الفرع  
+          <br>
+          لتشغيل نظام من ايقونه اسمها run
+        </p>
       </ul>
       <div class="sidebar-footer">
         <button class="btn-danger btn-logout" onclick="logout()">تسجيل الخروج</button>
@@ -122,9 +125,9 @@
         <!-- 2. قسم أرقام الخدمة -->
         <div id="servicesTab" class="section-view">
           <div class="form-container">
-            <h3>تسجيل رقم خدمة جديد</h3>
+            <h3>تسجيل ارقام الخدمه </h3>
             <form id="serviceForm" class="form-grid">
-              <input type="text" id="serviceNumInput" placeholder="رقم الخدمة (مثال: SRV-101)" required>
+              <input type="text" id="serviceNumInput" placeholder="رقم الخدمة" required>
               <input type="text" id="serviceClientInput" placeholder="اسم العميل" required>
               <input type="number" id="serviceCostInput" placeholder="قيمة الخدمة" step="0.01" required>
               <select id="servicePaymentStatus" required>
@@ -171,7 +174,7 @@
         <!-- 4. قسم مدينون -->
         <div id="debtorsTab" class="section-view">
           <div class="form-container">
-            <h3>تسجيل مستحق علينا (مدينون)</h3>
+            <h3>تسجيل مستحق علينا</h3>
             <form id="debtorForm" class="form-grid">
               <input type="text" id="debtorName" placeholder="اسم الجهة / الشخص" required>
               <input type="number" id="debtorAmount" placeholder="المبلغ المستحق" step="0.01" required>
@@ -196,7 +199,7 @@
         <!-- 5. قسم دائنون -->
         <div id="creditorsTab" class="section-view">
           <div class="form-container">
-            <h3>تسجيل مبلغ لنا عند عميل/جهة (دائنون)</h3>
+            <h3>تسجيل مبلغ لنا عند عميل/جهة</h3>
             <form id="creditorForm" class="form-grid">
               <input type="text" id="creditorName" placeholder="اسم العميل / الجهة" required>
               <input type="number" id="creditorAmount" placeholder="المبلغ المطلوب" step="0.01" required>
@@ -217,7 +220,6 @@
             <tbody id="creditorsTableBody"></tbody>
           </table>
         </div>
-
         <!-- 6. قسم إعدادات الحساب -->
         <div id="settingsTab" class="section-view">
           <div class="form-container" style="max-width: 500px; margin: 0 auto;">
@@ -243,22 +245,19 @@
             </form>
           </div>
         </div>
-
+          
       </div>
-
+        
       <!-- الفوتر -->
       <footer class="app-footer">
         <div class="footer-content">
           <p>جميع الحقوق محفوظة &copy; 2026 <strong>نظام الفرع</strong></p>
-          <p class="dev-tag">تطوير بواسطة: <span>ahmed$$</span> | الإصدار 1.0.0</p>
+          <p class="dev-tag">تطوير بواسطة: <span>ahmed$$</span> | الإصدار 1.2.0</p>
           <p class="dev-tag">للدعم الفني لل اتصل <span>01040810091</span></p>
         </div>
       </footer>
-
     </div>
   </div>
-
   <script src="script.js"></script>
 </body>
-
 </html>

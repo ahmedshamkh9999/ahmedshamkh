@@ -1,6 +1,6 @@
-const DEFAULT_USER_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"; // admin
-const DEFAULT_PASS_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; // 123
-
+const API_BASE = "http://127.0.0.1:5000/api";
+const DEFAULT_USER_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+const DEFAULT_PASS_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 let authUserHash = localStorage.getItem('app_user_hash') || DEFAULT_USER_HASH;
 let authPassHash = localStorage.getItem('app_pass_hash') || DEFAULT_PASS_HASH;
 
@@ -55,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ربط زر "ابدأ الآن" بشاشة تسجيل الدخول
   const startBtn = document.getElementById('startBtn');
   if (startBtn) {
     startBtn.addEventListener('click', function() {
@@ -67,13 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// حالة بيانات النظام
+// حالة بيانات النظام المعتمدة من السيرفر
 let state = {
-  drawerBalance: parseFloat(localStorage.getItem('br_drawer')) || 0,
-  logs: JSON.parse(localStorage.getItem('br_logs')) || [],
-  services: JSON.parse(localStorage.getItem('br_services')) || [],
-  debtors: JSON.parse(localStorage.getItem('br_debtors')) || [],
-  creditors: JSON.parse(localStorage.getItem('br_creditors')) || []
+  drawerBalance: 0,
+  logs: [],
+  services: [],
+  debtors: [],
+  creditors: []
 };
 
 // ---------------- نظام تسجيل الدخول ----------------
@@ -109,7 +108,6 @@ function logout() {
   }).then((result) => {
     if (result.isConfirmed) {
       sessionStorage.removeItem('isLoggedIn');
-      // عند تسجيل الخروج، نعيد إظهار شاشة البداية وتخفي التطبيق
       const welcomeSec = document.getElementById('welcomeSection');
       if (welcomeSec) welcomeSec.style.display = 'flex';
       checkAuth();
@@ -127,22 +125,28 @@ function checkAuth() {
     if (welcomeSec) welcomeSec.style.display = 'none';
     if (loginSec) loginSec.classList.add('hidden');
     if (appSec) appSec.classList.remove('hidden');
-    renderUI();
+    loadStateFromDB();
   } else {
-    // لو مش مسجل دخول، نقدر نخلي شاشة البداية تظهر الأول، أو لو حابب تظهر شاشة الدخول مباشرة
     if (appSec) appSec.classList.add('hidden');
-    // لو حابب أول ما يفتح تظهر شاشة البداية سيبها زي ما هي، ولما يدوس ابدأ تظهر شاشة الدخول
   }
 }
 
-// ---------------- حفظ البيانات ----------------
-function saveState() {
-  localStorage.setItem('br_drawer', state.drawerBalance);
-  localStorage.setItem('br_logs', JSON.stringify(state.logs));
-  localStorage.setItem('br_services', JSON.stringify(state.services));
-  localStorage.setItem('br_debtors', JSON.stringify(state.debtors));
-  localStorage.setItem('br_creditors', JSON.stringify(state.creditors));
-  renderUI();
+// ---------------- جلب البيانات الحقيقية من السيرفر ----------------
+async function loadStateFromDB() {
+  try {
+    const res = await fetch(`${API_BASE}/state`);
+    if (res.ok) {
+      const data = await res.json();
+      state.drawerBalance = Number(data.drawerBalance || 0);
+      state.logs = data.logs || data.transactions || [];
+      state.services = data.services || [];
+      state.debtors = data.debtors || [];
+      state.creditors = data.creditors || [];
+      renderUI();
+    }
+  } catch (err) {
+    console.error("فشل الاتصال بالسيرفر:", err);
+  }
 }
 
 // ---------------- التنقل بين التبويبات ----------------
@@ -168,65 +172,79 @@ function switchTab(e, tabId) {
   }
 }
 
-function addLog(type, amount, note) {
-  if (type === 'in') state.drawerBalance += amount;
-  if (type === 'out') state.drawerBalance -= amount;
-
-  state.logs.unshift({
-    id: Date.now(),
-    time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-    type: type,
-    amount: amount,
-    note: note
-  });
-}
-
 // 1. حركة الدرج
-document.getElementById('drawerForm').addEventListener('submit', (e) => {
+document.getElementById('drawerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const type = document.getElementById('drawerTxType').value;
-  const amount = parseFloat(document.getElementById('drawerTxAmount').value);
-  const note = document.getElementById('drawerTxNote').value;
+  const amount = parseFloat(document.getElementById('drawerTxAmount').value) || 0;
+  const note = document.getElementById('drawerTxNote').value || '';
 
-  addLog(type, amount, note);
-  saveState();
-  e.target.reset();
-  Swal.fire({ icon: 'success', title: 'تمت العملية بنجاح', timer: 1200, showConfirmButton: false });
+  try {
+    const res = await fetch(`${API_BASE}/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, amount, note })
+    });
+    if (res.ok) {
+      await loadStateFromDB();
+      e.target.reset();
+      Swal.fire({ icon: 'success', title: 'تمت العملية بنجاح', timer: 1200, showConfirmButton: false });
+    }
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الحركة بالسيرفر' });
+  }
 });
 
 // 2. أرقام الخدمة
-document.getElementById('serviceForm').addEventListener('submit', (e) => {
+document.getElementById('serviceForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const num = document.getElementById('serviceNumInput').value;
   const client = document.getElementById('serviceClientInput').value;
-  const cost = parseFloat(document.getElementById('serviceCostInput').value);
+  const cost = parseFloat(document.getElementById('serviceCostInput').value) || 0;
   const status = document.getElementById('servicePaymentStatus').value;
 
-  if (status === 'paid') {
-    addLog('in', cost, `تحصيل خدمة (${num}) - العميل: ${client}`);
-  } else if (status === 'debtor') {
-    state.debtors.push({ id: Date.now(), name: client, amount: cost, reason: `خدمة رقم ${num}` });
-  } else if (status === 'creditor' || status === 'debt') {
-    state.creditors.push({ id: Date.now(), name: client, amount: cost, reason: `خدمة رقم ${num}` });
-  }
+  try {
+    await fetch(`${API_BASE}/services`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ num, client, cost, status })
+    });
 
-  state.services.unshift({ id: Date.now(), num, client, cost, status });
-  saveState();
-  e.target.reset();
-  Swal.fire({ icon: 'success', title: 'تم حفظ الخدمة', timer: 1200, showConfirmButton: false });
+    if (status === 'paid') {
+      await fetch(`${API_BASE}/transactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'in', amount: cost, note: `تحصيل خدمة (${num}) - العميل: ${client}` })
+      });
+    }
+
+    await loadStateFromDB();
+    e.target.reset();
+    Swal.fire({ icon: 'success', title: 'تم حفظ الخدمة بالسيرفر', timer: 1200, showConfirmButton: false });
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الخدمة' });
+  }
 });
 
-// 3. مدينون
-document.getElementById('debtorForm').addEventListener('submit', (e) => {
+// 3. مدينون (إضافة وسداد)
+document.getElementById('debtorForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('debtorName').value;
-  const amount = parseFloat(document.getElementById('debtorAmount').value);
+  const amount = parseFloat(document.getElementById('debtorAmount').value) || 0;
   const reason = document.getElementById('debtorReason').value;
 
-  state.debtors.push({ id: Date.now(), name, amount, reason });
-  saveState();
-  e.target.reset();
-  Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
+  try {
+    await fetch(`${API_BASE}/debtors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, amount, reason })
+    });
+    await loadStateFromDB();
+    e.target.reset();
+    Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة المدين' });
+  }
 });
 
 function payDebtor(id) {
@@ -244,33 +262,50 @@ function payDebtor(id) {
     cancelButtonText: 'إلغاء',
     confirmButtonColor: '#10b981',
     cancelButtonColor: '#64748b'
-  }).then((result) => {
+  }).then(async (result) => {
     if (result.isConfirmed) {
       const payAmount = parseFloat(result.value);
       if (payAmount > 0 && payAmount <= debtor.amount) {
-        debtor.amount -= payAmount;
-        addLog('out', payAmount, `سداد دين لـ: ${debtor.name}`);
-        if (debtor.amount === 0) {
-          state.debtors = state.debtors.filter(d => d.id !== id);
-        }
-        saveState();
+        const remaining = debtor.amount - payAmount;
+        await fetch(`${API_BASE}/debtors/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: remaining })
+        });
+        await fetch(`${API_BASE}/transactions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'out', amount: payAmount, note: `سداد دين لـ: ${debtor.name}` })
+        });
+        await loadStateFromDB();
       }
     }
   });
 }
 
-// 4. دائنون
-document.getElementById('creditorForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const name = document.getElementById('creditorName').value;
-  const amount = parseFloat(document.getElementById('creditorAmount').value);
-  const reason = document.getElementById('creditorReason').value;
+// 4. دائنون (إضافة وتحصيل)
+const creditorForm = document.getElementById('creditorForm');
+if (creditorForm) {
+  creditorForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('creditorName').value;
+    const amount = parseFloat(document.getElementById('creditorAmount').value) || 0;
+    const reason = document.getElementById('creditorReason').value;
 
-  state.creditors.push({ id: Date.now(), name, amount, reason });
-  saveState();
-  e.target.reset();
-  Swal.fire({ icon: 'success', title: 'تم إضافة الدائن', timer: 1200, showConfirmButton: false });
-});
+    try {
+      await fetch(`${API_BASE}/creditors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, amount, reason })
+      });
+      await loadStateFromDB();
+      e.target.reset();
+      Swal.fire({ icon: 'success', title: 'تم إضافة الدائن', timer: 1200, showConfirmButton: false });
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة الدائن' });
+    }
+  });
+}
 
 function collectCreditor(id) {
   const creditor = state.creditors.find(c => c.id === id);
@@ -287,16 +322,22 @@ function collectCreditor(id) {
     cancelButtonText: 'إلغاء',
     confirmButtonColor: '#10b981',
     cancelButtonColor: '#64748b'
-  }).then((result) => {
+  }).then(async (result) => {
     if (result.isConfirmed) {
       const collectAmount = parseFloat(result.value);
       if (collectAmount > 0 && collectAmount <= creditor.amount) {
-        creditor.amount -= collectAmount;
-        addLog('in', collectAmount, `تحصيل مستحق من: ${creditor.name}`);
-        if (creditor.amount === 0) {
-          state.creditors = state.creditors.filter(c => c.id !== id);
-        }
-        saveState();
+        const remaining = creditor.amount - collectAmount;
+        await fetch(`${API_BASE}/creditors/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: remaining })
+        });
+        await fetch(`${API_BASE}/transactions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'in', amount: collectAmount, note: `تحصيل مستحق من: ${creditor.name}` })
+        });
+        await loadStateFromDB();
       }
     }
   });
@@ -312,15 +353,10 @@ function deleteLog(id) {
     cancelButtonColor: '#64748b',
     confirmButtonText: 'نعم، احذف',
     cancelButtonText: 'إلغاء'
-  }).then((result) => {
+  }).then(async (result) => {
     if (result.isConfirmed) {
-      const log = state.logs.find(l => l.id === id);
-      if (log) {
-        if (log.type === 'in') state.drawerBalance -= log.amount;
-        if (log.type === 'out') state.drawerBalance += log.amount;
-        state.logs = state.logs.filter(l => l.id !== id);
-        saveState();
-      }
+      await fetch(`${API_BASE}/transactions/${id}`, { method: 'DELETE' });
+      await loadStateFromDB();
     }
   });
 }
@@ -335,85 +371,112 @@ function deleteService(id) {
     cancelButtonColor: '#64748b',
     confirmButtonText: 'نعم، احذف',
     cancelButtonText: 'إلغاء'
-  }).then((result) => {
+  }).then(async (result) => {
     if (result.isConfirmed) {
-      state.services = state.services.filter(s => s.id !== id);
-      saveState();
+      await fetch(`${API_BASE}/services/${id}`, { method: 'DELETE' });
+      await loadStateFromDB();
     }
   });
 }
 
 // ---------------- تحديث الواجهة ----------------
 function renderUI() {
-  document.getElementById('drawerDisplay').textContent = `${state.drawerBalance.toFixed(2)} ج.م`;
+  const drawerDisplay = document.getElementById('drawerDisplay');
+  if (drawerDisplay) drawerDisplay.textContent = `${(state.drawerBalance || 0).toFixed(2)} ج.م`;
 
-  const totalRevenues = state.services.reduce((sum, item) => sum + item.cost, 0);
-  document.getElementById('totalRevenuesDisplay').textContent = `${totalRevenues.toFixed(2)} ج.م`;
+  const totalRevenues = (state.services || []).reduce((sum, item) => sum + Number(item.cost || 0), 0);
+  const totalRevEl = document.getElementById('totalRevenuesDisplay');
+  if (totalRevEl) totalRevEl.textContent = `${totalRevenues.toFixed(2)} ج.م`;
 
-  const totalExpenses = state.logs
-    .filter(log => log.type === 'out')
-    .reduce((sum, log) => sum + log.amount, 0);
-  document.getElementById('totalExpensesDisplay').textContent = `${totalExpenses.toFixed(2)} ج.م`;
+  const totalExpenses = (state.logs || [])
+    .filter(log => String(log.type || '').toLowerCase() === 'out')
+    .reduce((sum, log) => sum + Number(log.amount || 0), 0);
+  const totalExpEl = document.getElementById('totalExpensesDisplay');
+  if (totalExpEl) totalExpEl.textContent = `${totalExpenses.toFixed(2)} ج.م`;
 
   const netProfit = totalRevenues - totalExpenses;
   const netProfitEl = document.getElementById('netProfitDisplay');
-  netProfitEl.textContent = `${netProfit.toFixed(2)} ج.م`;
-  netProfitEl.className = `card-value ${netProfit >= 0 ? 'success-text' : 'danger-text'}`;
+  if (netProfitEl) {
+    netProfitEl.textContent = `${netProfit.toFixed(2)} ج.م`;
+    netProfitEl.className = `card-value ${netProfit >= 0 ? 'success-text' : 'danger-text'}`;
+  }
 
-  const totalDebtors = state.debtors.reduce((sum, item) => sum + item.amount, 0);
-  document.getElementById('totalDebtorsDisplay').textContent = `${totalDebtors.toFixed(2)} ج.م`;
+  const totalDebtors = (state.debtors || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalDebEl = document.getElementById('totalDebtorsDisplay');
+  if (totalDebEl) totalDebEl.textContent = `${totalDebtors.toFixed(2)} ج.م`;
 
-  const totalCreditors = state.creditors.reduce((sum, item) => sum + item.amount, 0);
-  document.getElementById('totalCreditorsDisplay').textContent = `${totalCreditors.toFixed(2)} ج.م`;
+  const totalCreditors = (state.creditors || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalCredEl = document.getElementById('totalCreditorsDisplay');
+  if (totalCredEl) totalCredEl.textContent = `${totalCreditors.toFixed(2)} ج.م`;
 
-  document.getElementById('drawerTableBody').innerHTML = state.logs.map(log => `
-    <tr>
-      <td>${log.time}</td>
-      <td><span class="badge ${log.type === 'in' ? 'badge-success' : 'badge-danger'}">${log.type === 'in' ? 'إيداع (+)' : 'سحب (-)'}</span></td>
-      <td><strong>${log.amount.toFixed(2)} ج.م</strong></td>
-      <td>${log.note}</td>
-      <td><button class="btn-danger btn-small" onclick="deleteLog(${log.id})">حذف</button></td>
-    </tr>
-  `).join('');
+  // رسم جدول الدرج
+  const drawerBody = document.getElementById('drawerTableBody');
+  if (drawerBody) {
+    drawerBody.innerHTML = (state.logs || []).map(log => {
+      const isIncome = String(log.type || '').toLowerCase() === 'in';
+      const amt = Number(log.amount || 0).toFixed(2);
+      return `
+        <tr>
+          <td>${log.time || '--:--'}</td>
+          <td><span class="badge ${isIncome ? 'badge-success' : 'badge-danger'}">${isIncome ? 'إيداع (+)' : 'سحب (-)'}</span></td>
+          <td><strong>${amt} ج.م</strong></td>
+          <td>${log.note || ''}</td>
+          <td><button class="btn-danger btn-small" onclick="deleteLog(${log.id})">حذف</button></td>
+        </tr>
+      `;
+    }).join('');
+  }
 
-  document.getElementById('servicesTableBody').innerHTML = state.services.map(s => {
-    let badgeClass = 'badge-success';
-    let badgeText = 'محصل بالدرج';
-    if (s.status === 'debtor') {
-      badgeClass = 'badge-danger';
-      badgeText = 'مستحق (مدينون)';
-    } else if (s.status === 'creditor' || s.status === 'debt') {
-      badgeClass = 'badge-warning';
-      badgeText = 'مستحق (دائنون)';
-    }
-    return `
+  // رسم جدول الخدمات
+  const servicesBody = document.getElementById('servicesTableBody');
+  if (servicesBody) {
+    servicesBody.innerHTML = (state.services || []).map(s => {
+      let badgeClass = 'badge-success';
+      let badgeText = 'محصل بالدرج';
+      if (s.status === 'debtor') {
+        badgeClass = 'badge-danger';
+        badgeText = 'مستحق (مدينون)';
+      } else if (s.status === 'creditor' || s.status === 'debt') {
+        badgeClass = 'badge-warning';
+        badgeText = 'مستحق (دائنون)';
+      }
+      return `
+        <tr>
+          <td><strong>${s.num || ''}</strong></td>
+          <td>${s.client || ''}</td>
+          <td>${Number(s.cost || 0).toFixed(2)} ج.م</td>
+          <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+          <td><button class="btn-danger btn-small" onclick="deleteService(${s.id})">حذف</button></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // رسم جدول المدينون
+  const debtorsBody = document.getElementById('debtorsTableBody');
+  if (debtorsBody) {
+    debtorsBody.innerHTML = (state.debtors || []).map(d => `
       <tr>
-        <td><strong>${s.num}</strong></td>
-        <td>${s.client}</td>
-        <td>${s.cost.toFixed(2)} ج.م</td>
-        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-        <td><button class="btn-danger btn-small" onclick="deleteService(${s.id})">حذف</button></td>
+        <td><strong>${d.name || ''}</strong></td>
+        <td class="danger-text" style="font-weight: bold;">${Number(d.amount || 0).toFixed(2)} ج.م</td>
+        <td>${d.reason || ''}</td>
+        <td><button class="btn-success" onclick="payDebtor(${d.id})">سداد من الدرج</button></td>
       </tr>
-    `;
-  }).join('');
+    `).join('');
+  }
 
-  document.getElementById('debtorsTableBody').innerHTML = state.debtors.map(d => `
-    <tr>
-      <td><strong>${d.name}</strong></td>
-      <td class="danger-text" style="font-weight: bold;">${d.amount.toFixed(2)} ج.م</td>
-      <td>${d.reason}</td>
-      <td><button class="btn-success" onclick="payDebtor(${d.id})">سداد من الدرج</button></td>
-    </tr>
-  `).join('');
-
-  document.getElementById('creditorsTableBody').innerHTML = state.creditors.map(c => `
-    <tr>
-      <td><strong>${c.name}</strong></td>
-      <td class="success-text" style="font-weight: bold;">${c.amount.toFixed(2)} ج.م</td>
-      <td>${c.reason}</td>
-      <td><button class="btn-success" onclick="collectCreditor(${c.id})">تحصيل للدرج</button></td>
-    </tr>
-  `).join('');
+  // رسم جدول الدائنون
+  const creditorsBody = document.getElementById('creditorsTableBody');
+  if (creditorsBody) {
+    creditorsBody.innerHTML = (state.creditors || []).map(c => `
+      <tr>
+        <td><strong>${c.name || ''}</strong></td>
+        <td class="success-text" style="font-weight: bold;">${Number(c.amount || 0).toFixed(2)} ج.م</td>
+        <td>${c.reason || ''}</td>
+        <td><button class="btn-success" onclick="collectCreditor(${c.id})">تحصيل للدرج</button></td>
+      </tr>
+    `).join('');
+  }
 }
 
 // التشغيل الأولي

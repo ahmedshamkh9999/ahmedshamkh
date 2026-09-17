@@ -597,5 +597,5 @@ tbody tr:hover {
   color: var(--text-muted);
   font-size: 0.95rem;
   font-weight: 600;
-   background-image: url('./فوري.jpeg');
+  background-image: url('./فوري.jpeg');
 }

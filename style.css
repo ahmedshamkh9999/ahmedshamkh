@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
 :root {
-  --bg-main: #0b0f19;
+  --bg-main: #1e2535;
   --bg-secondary: #111827;
   --card-bg: #1f2937;
   --card-border: #374151;
@@ -35,7 +35,7 @@ body {
   background-color: var(--bg-main);
   color: var(--text-dark);
   overflow: hidden;
-  height: 100vh;
+  height: 100px;
 }
 
 /* Scrollbar */
@@ -498,7 +498,7 @@ tr:last-child td {
 }
 
 tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(133, 93, 93, 0.03);
 }
 
 .badge {

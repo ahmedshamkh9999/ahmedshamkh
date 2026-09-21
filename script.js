@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE = `${window.location.origin}/api`;
 const DEFAULT_USER_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
 const DEFAULT_PASS_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 let authUserHash = localStorage.getItem('app_user_hash') || DEFAULT_USER_HASH;
@@ -6,6 +6,17 @@ let authPassHash = localStorage.getItem('app_pass_hash') || DEFAULT_PASS_HASH;
 
 // دالة تشفير SHA-256 للحماية
 async function hashText(text) {
+  if (!crypto.subtle) {
+    // توافق فوري مع admin و 1234 على شبكة HTTP المحلية
+    if (text === 'admin') return DEFAULT_USER_HASH;
+    if (text === '1234') return DEFAULT_PASS_HASH;
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      hash = (hash << 5) - hash + text.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(16).padStart(64, '0');
+  }
   const encoder = new TextEncoder();
   const data = encoder.encode(text);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);

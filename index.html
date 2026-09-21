@@ -7,17 +7,18 @@
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="فوري.jpeg" type="image/png">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </head>
 
 <body>
-
+  
   <!-- 1. شاشة البداية الترحيبية (تظهر أولاً) -->
   <div id="welcomeSection" class="login-wrapper">
     <div class="login-card" style="text-align: center;">
       <img src="فوري.jpeg" alt="لوجو الفرع" class="login-logo" onerror="this.style.display='none'">
       <h2>نظام الفرع</h2>
       <h3 style="color: #666; font-size: 15px; margin-bottom: 25px;">Welcome to System The Branch</h3>
-      <button type="button" id="startBtn" style="width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">ابدأ الآن</button>
+      <button type="button" id="startBtn" style="width: 100%; padding: 12px; background-color: #252c33; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">ابدأ الآن</button>
     </div>
   </div>
 
@@ -59,11 +60,6 @@
         <li class="nav-item">
           <a class="nav-link" onclick="switchTab(event, 'settingsTab')"> إعدادات الحساب</a>
         </li>
-        <p>
-          ملحوظه:تمني لكم تجربه سعيده لنظام الفرع  
-          <br>
-          لتشغيل نظام من ايقونه اسمها run
-        </p>
       </ul>
       <div class="sidebar-footer">
         <button class="btn-danger btn-logout" onclick="logout()">تسجيل الخروج</button>
@@ -230,7 +226,7 @@
                 <input type="password" id="currentPasswordInput" placeholder="أدخل كلمة السر الحالية للتأكيد" required
                   style="width: 100%; padding: 10px; box-sizing: border-box;">
               </div>
-              <hr style="border: 0; border-top: 1px solid rgba(32, 32, 32, 0.1); margin: 20px 0;">
+              <hr style="border: 0; border-top: 1px solid rgba(23, 15, 84, 0.1); margin: 20px 0;">
               <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px;">اسم المستخدم الجديد:</label>
                 <input type="text" id="newUsernameInput" placeholder="أدخل اسم المستخدم الجديد" required
@@ -247,12 +243,15 @@
         </div>
           
       </div>
+        <p>
+          <h6>@ahmedshamkh</h6>
+        </p>
         
       <!-- الفوتر -->
       <footer class="app-footer">
         <div class="footer-content">
           <p>جميع الحقوق محفوظة &copy; 2026 <strong>نظام الفرع</strong></p>
-          <p class="dev-tag">تطوير بواسطة: <span>ahmed$$</span> | الإصدار 1.2.0</p>
+          <p class="dev-tag">تطوير بواسطة: <span>ahmed$$</span> | الإصدار 1.0.0</p>
           <p class="dev-tag">للدعم الفني لل اتصل <span>01040810091</span></p>
         </div>
       </footer>

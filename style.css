@@ -599,3 +599,14 @@ tbody tr:hover {
   font-weight: 600;
   background-image: url('./فوري.jpeg');
 }
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+  .sidebar { 
+    width: 100%; 
+    height: auto; 
+    position: relative; 
+    border-left: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .main-content { padding: 16px; }
+}

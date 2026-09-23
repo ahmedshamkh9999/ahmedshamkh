@@ -1,55 +1,17 @@
 const SUPABASE_URL = 'https://wzznqnagjccxkqxlwuqu.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_PmNID_cCg92YRghHV1WSYQ_043c7qgk';
 
-const DEFAULT_USER_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"; // admin
-const DEFAULT_PASS_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; // 1234
-let authUserHash = localStorage.getItem('app_user_hash') || DEFAULT_USER_HASH;
-let authPassHash = localStorage.getItem('app_pass_hash') || DEFAULT_PASS_HASH;
-
-// ---------------- دالة تشفير SHA-256 للحماية ----------------
-async function hashText(text) {
-  if (!crypto.subtle) {
-    if (text === 'admin') return DEFAULT_USER_HASH;
-    if (text === '1234') return DEFAULT_PASS_HASH;
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-      hash = (hash << 5) - hash + text.charCodeAt(i);
-      hash |= 0;
-    }
-    return Math.abs(hash).toString(16).padStart(64, '0');
-  }
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// ---------------- دالة تغيير بيانات الدخول ----------------
-async function changeCredentials(newUsername, newPassword) {
-  if (!newUsername || !newPassword) return;
-  const newUHash = await hashText(newUsername.trim());
-  const newPHash = await hashText(newPassword.trim());
-
-  authUserHash = newUHash;
-  authPassHash = newPHash;
-
-  localStorage.setItem('app_user_hash', newUHash);
-  localStorage.setItem('app_pass_hash', newPHash);
-  sessionStorage.setItem('isLoggedIn', newPHash);
-}
-
-// ---------------- الهيدرز الموحدة لـ Supabase ----------------
+// دالة جلب الهيدرز مع توكن الجلسة الحقيقي
 function getSupabaseHeaders() {
+  const token = localStorage.getItem('sb_access_token');
   return {
     'apikey': SUPABASE_ANON_KEY,
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Authorization': token ? `Bearer ${token}` : `Bearer ${SUPABASE_ANON_KEY}`,
     'Content-Type': 'application/json',
     'Prefer': 'return=representation'
   };
 }
 
-// ---------------- حالة بيانات النظام المعتمدة ----------------
 let state = {
   drawerBalance: 0,
   logs: [],
@@ -58,35 +20,8 @@ let state = {
   creditors: []
 };
 
-// ---------------- نظام تسجيل الدخول ----------------
+// ---------------- نظام تسجيل الدخول عبر Supabase Auth ----------------
 document.addEventListener('DOMContentLoaded', () => {
-  const authForm = document.getElementById('changeAuthForm');
-  if (authForm) {
-    authForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const currentPass = document.getElementById('currentPasswordInput') ? document.getElementById('currentPasswordInput').value.trim() : '';
-      const newUsers = document.getElementById('newUsernameInput').value.trim();
-      const newPass = document.getElementById('newPasswordInput').value.trim();
-
-      if ((document.getElementById('currentPasswordInput') && !currentPass) || !newUsers || !newPass) {
-        Swal.fire('تنبيه', 'يرجى إدخال جميع البيانات المطلوبة', 'warning');
-        return;
-      }
-
-      if (document.getElementById('currentPasswordInput')) {
-        const inputCurrentHash = await hashText(currentPass);
-        if (inputCurrentHash !== authPassHash) {
-          Swal.fire({ icon: 'error', title: 'خطأ!', text: 'كلمة السر الحالية غير صحيحة.', confirmButtonColor: '#ef4444' });
-          return;
-        }
-      }
-
-      await changeCredentials(newUsers, newPass);
-      Swal.fire({ icon: 'success', title: 'تم التحديث بنجاح!', text: 'تم تغيير بيانات الدخول.', confirmButtonColor: '#10b981' });
-      authForm.reset();
-    });
-  }
-
   const startBtn = document.getElementById('startBtn');
   if (startBtn) {
     startBtn.addEventListener('click', function() {
@@ -101,21 +36,48 @@ document.addEventListener('DOMContentLoaded', () => {
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const user = document.getElementById('usernameInput').value.trim();
+      const email = document.getElementById('usernameInput').value.trim();
       const pass = document.getElementById('passwordInput').value.trim();
       const errorMsg = document.getElementById('loginError');
 
-      const inputUserHash = await hashText(user);
-      const inputPassHash = await hashText(pass);
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password: pass })
+        });
 
-      if (inputUserHash === authUserHash && inputPassHash === authPassHash) {
-        sessionStorage.setItem('isLoggedIn', inputPassHash);
-        if (errorMsg) errorMsg.style.display = 'none';
-        e.target.reset();
-        checkAuth();
-      } else {
-        if (errorMsg) errorMsg.style.display = 'block';
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem('sb_access_token', data.access_token);
+          if (errorMsg) errorMsg.style.display = 'none';
+          e.target.reset();
+          checkAuth();
+        } else {
+          if (errorMsg) {
+            errorMsg.textContent = 'بيانات الدخول غير صحيحة';
+            errorMsg.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        if (errorMsg) {
+          errorMsg.textContent = 'فشل الاتصال بالسيرفر';
+          errorMsg.style.display = 'block';
+        }
       }
+    });
+  }
+
+  // إخفاء إعدادات تغيير الباسورد القديمة أو تحويلها (يتم إدارتها من Supabase)
+  const authForm = document.getElementById('changeAuthForm');
+  if (authForm) {
+    authForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      Swal.fire('تنبيه', 'إدارة الحسابات تتم من لوحة تحكم Supabase', 'info');
     });
   }
 
@@ -132,9 +94,9 @@ function logout() {
     cancelButtonColor: '#64748b',
     confirmButtonText: 'نعم، خروج',
     cancelButtonText: 'إلغاء'
-  }).then((result) => {
+  }).then(async (result) => {
     if (result.isConfirmed) {
-      sessionStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('sb_access_token');
       checkAuth();
       const welcomeSec = document.getElementById('welcomeSection');
       if (welcomeSec) welcomeSec.style.display = 'flex';
@@ -143,12 +105,12 @@ function logout() {
 }
 
 function checkAuth() {
-  const isLoggedIn = sessionStorage.getItem('isLoggedIn') === authPassHash;
+  const token = localStorage.getItem('sb_access_token');
   const welcomeSec = document.getElementById('welcomeSection');
   const loginSec = document.getElementById('loginSection');
   const appSec = document.getElementById('appSection');
 
-  if (isLoggedIn) {
+  if (token) {
     if (welcomeSec) welcomeSec.style.display = 'none';
     if (loginSec) loginSec.classList.add('hidden');
     if (appSec) appSec.classList.remove('hidden');
@@ -169,12 +131,17 @@ async function loadStateFromSupabase() {
       fetch(`${SUPABASE_URL}/rest/v1/creditors?select=*`, { headers })
     ]);
 
+    if (txRes.status === 401 || srvRes.status === 401) {
+      localStorage.removeItem('sb_access_token');
+      checkAuth();
+      return;
+    }
+
     state.logs = txRes.ok ? await txRes.json() : [];
     state.services = srvRes.ok ? await srvRes.json() : [];
     state.debtors = debRes.ok ? await debRes.json() : [];
     state.creditors = credRes.ok ? await credRes.json() : [];
 
-    // حساب رصيد الدرج تراكمياً من الحركات (in - out)
     state.drawerBalance = state.logs.reduce((acc, log) => {
       const amt = Number(log.amount || 0);
       const isInc = String(log.type || '').toLowerCase() === 'in';
@@ -190,7 +157,6 @@ async function loadStateFromSupabase() {
 // ---------------- التنقل بين التبويبات ----------------
 function switchTab(e, tabId) {
   if (e) e.preventDefault();
-  
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   document.querySelectorAll('.section-view').forEach(s => {
     s.classList.remove('active');
@@ -230,12 +196,9 @@ if (drawerForm) {
         e.target.reset();
         Swal.fire({ icon: 'success', title: 'تمت العملية بنجاح', timer: 1200, showConfirmButton: false });
       } else {
-        const errText = await res.text();
-        console.error('Save failed details:', errText);
         Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الحركة بالسيرفر' });
       }
     } catch (err) {
-      console.error(err);
       Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الحركة بالسيرفر' });
     }
   });
@@ -275,7 +238,7 @@ if (serviceForm) {
   });
 }
 
-// 3. مدينون (إضافة وسداد)
+// 3. مدينون
 const debtorForm = document.getElementById('debtorForm');
 if (debtorForm) {
   debtorForm.addEventListener('submit', async (e) => {
@@ -335,7 +298,7 @@ function payDebtor(id) {
   });
 }
 
-// 4. دائنون (إضافة وتحصيل)
+// 4. دائنون
 const creditorForm = document.getElementById('creditorForm');
 if (creditorForm) {
   creditorForm.addEventListener('submit', async (e) => {
@@ -467,7 +430,6 @@ function renderUI() {
   const totalCredEl = document.getElementById('totalCreditorsDisplay');
   if (totalCredEl) totalCredEl.textContent = `${totalCreditors.toFixed(2)} ج.م`;
 
-  // رسم جدول الدرج
   const drawerBody = document.getElementById('drawerTableBody');
   if (drawerBody) {
     drawerBody.innerHTML = (state.logs || []).map(log => {
@@ -486,7 +448,6 @@ function renderUI() {
     }).join('');
   }
 
-  // رسم جدول الخدمات
   const servicesBody = document.getElementById('servicesTableBody');
   if (servicesBody) {
     servicesBody.innerHTML = (state.services || []).map(s => {
@@ -511,7 +472,6 @@ function renderUI() {
     }).join('');
   }
 
-  // رسم جدول المدينون
   const debtorsBody = document.getElementById('debtorsTableBody');
   if (debtorsBody) {
     debtorsBody.innerHTML = (state.debtors || []).map(d => `
@@ -524,7 +484,6 @@ function renderUI() {
     `).join('');
   }
 
-  // رسم جدول الدائنون
   const creditorsBody = document.getElementById('creditorsTableBody');
   if (creditorsBody) {
     creditorsBody.innerHTML = (state.creditors || []).map(c => `

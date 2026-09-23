@@ -149,10 +149,12 @@ function checkAuth() {
 // ---------------- جلب البيانات من Supabase ----------------
 async function loadStateFromSupabase() {
   try {
-    const headers = {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-    };
+   const headers = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+ };
 
     const [txRes, srvRes, debRes, credRes] = await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/transactions?select=*&order=created_at.desc`, { headers }),
@@ -249,7 +251,7 @@ if (serviceForm) {
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ num, client, cost, status })
       });

@@ -281,12 +281,21 @@ function payDebtor(id) {
     if (result.isConfirmed) {
       const payAmount = parseFloat(result.value);
       if (payAmount > 0 && payAmount <= debtor.amount) {
-        const remaining = debtor.amount - payAmount;
-        await fetch(`${SUPABASE_URL}/rest/v1/debtors?id=eq.${id}`, {
-          method: 'PATCH',
-          headers: getSupabaseHeaders(),
-          body: JSON.stringify({ amount: remaining })
-        });
+        const remaining = Number((debtor.amount - payAmount).toFixed(2));
+        
+        if (remaining <= 0) {
+          await fetch(`${SUPABASE_URL}/rest/v1/debtors?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: getSupabaseHeaders()
+          });
+        } else {
+          await fetch(`${SUPABASE_URL}/rest/v1/debtors?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: getSupabaseHeaders(),
+            body: JSON.stringify({ amount: remaining })
+          });
+        }
+
         await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
           headers: getSupabaseHeaders(),

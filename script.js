@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (authForm) {
     authForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      Swal.fire('تنبيه', 'إدارة الحسابات تتم من لوحة تحكم Supabase', 'info');
+      Swal.fire('تنبيه', 'إدارة الحسابات تتم من لوحة تحكم من ادمن ', 'info');
     });
   }
 

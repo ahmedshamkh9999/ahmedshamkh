@@ -29,8 +29,8 @@
       <h2>نظام الفرع</h2>
       <h3>welcom to system The Branch</h3>
       <form id="loginForm">
-        <input type="email" id="usernameInput" placeholder="البريد الإلكتروني (الإيميل)" required>
-        <input type="password" id="passwordInput" placeholder="كلمة المرور" required>
+        <input type="email" id="usernameInput" placeholder="البريد الإلكتروني (الإيميل)" required="من فضلك ادخل البريد الإلكتروني">
+        <input type="password" id="passwordInput" placeholder="كلمة المرور" required="من فضلك ادخل كلمة المرور">
         <button type="submit">تسجيل الدخول</button>
       </form>
       <div id="loginError" class="error-msg">برجاء ادخل البيانات صحيحه </div>
@@ -98,8 +98,8 @@
                 <option value="in">إيداع نقدي</option>
                 <option value="out">سحب</option>
               </select>
-              <input type="number" id="drawerTxAmount" placeholder="المبلغ" step="0.01" required>
-              <input type="text" id="drawerTxNote" placeholder="ملاحظات / البيان" required>
+              <input type="number" id="drawerTxAmount" placeholder="المبلغ" step="0.01" required="من فضلك ادخل المبلغ">
+              <input type="text" id="drawerTxNote" placeholder="ملاحظات " required="من فضلك ادخل الملاحظات">
               <button type="submit">تسجيل في الدرج</button>
             </form>
           </div>
@@ -123,9 +123,9 @@
           <div class="form-container">
             <h3>تسجيل ارقام الخدمه </h3>
             <form id="serviceForm" class="form-grid">
-              <input type="text" id="serviceNumInput" placeholder="رقم الخدمة" required>
-              <input type="text" id="serviceClientInput" placeholder="اسم العميل" required>
-              <input type="number" id="serviceCostInput" placeholder="قيمة الخدمة" step="0.01" required>
+              <input type="text" id="serviceNumInput" placeholder="رقم الخدمة" required="من فضلك ادخل رقم الخدمة">
+              <input type="text" id="serviceClientInput" placeholder="اسم العميل" required="من فضلك ادخل اسم العميل">
+              <input type="number" id="serviceCostInput" placeholder="قيمة الخدمة" step="0.01" required="من فضلك ادخل قيمة الخدمة">
               <select id="servicePaymentStatus" required>
                 <option value="paid">تم التحصيل ف الدرج</option>
                 <option value="creditor">آجل (تُسجل في الدائنون)</option>
@@ -172,9 +172,9 @@
           <div class="form-container">
             <h3>تسجيل مستحق علينا</h3>
             <form id="debtorForm" class="form-grid">
-              <input type="text" id="debtorName" placeholder="اسم الجهة / الشخص" required>
-              <input type="number" id="debtorAmount" placeholder="المبلغ المستحق" step="0.01" required>
-              <input type="text" id="debtorReason" placeholder="السبب" required>
+              <input type="text" id="debtorName" placeholder="اسم الجهة / الشخص" required="من فضلك ادخل الاسم">
+              <input type="number" id="debtorAmount" placeholder="المبلغ المستحق" step="0.01" required="من فضلك ادخل المبلغ">
+              <input type="text" id="debtorReason" placeholder="السبب" required="من فضلك ادخل السبب">
               <button type="submit">تسجيل الدين</button>
             </form>
           </div>
@@ -197,9 +197,9 @@
           <div class="form-container">
             <h3>تسجيل مبلغ لنا عند عميل/جهة</h3>
             <form id="creditorForm" class="form-grid">
-              <input type="text" id="creditorName" placeholder="اسم العميل / الجهة" required>
-              <input type="number" id="creditorAmount" placeholder="المبلغ المطلوب" step="0.01" required>
-              <input type="text" id="creditorReason" placeholder="السبب / الخدمة" required>
+              <input type="text" id="creditorName" placeholder="اسم العميل" required="من فضلك ادخل الاسم">
+              <input type="number" id="creditorAmount" placeholder="المبلغ المطلوب" step="0.01" required="من فضلك ادخل المبلغ">
+              <input type="text" id="creditorReason" placeholder="السبب" required="من فضلك ادخل السبب">
               <button type="submit">تسجيل المبلغ</button>
             </form>
           </div>
@@ -207,7 +207,7 @@
           <table>
             <thead>
               <tr>
-                <th>العميل / الجهة</th>
+                <th>العميل</th>
                 <th>المبلغ المتبقي لنا</th>
                 <th>السبب</th>
                 <th>العمليات</th>

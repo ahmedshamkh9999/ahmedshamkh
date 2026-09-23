@@ -204,7 +204,6 @@ function switchTab(e, tabId) {
   }
 }
 
-// 1. حركة الدرج
 const drawerForm = document.getElementById('drawerForm');
 if (drawerForm) {
   drawerForm.addEventListener('submit', async (e) => {
@@ -217,23 +216,28 @@ if (drawerForm) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
         method: 'POST',
         headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-    },
-    body: JSON.stringify({
-        type: typeValue,       // نوع الحركة (مثلاً: in / out أو إيداع)
-        amount: Number(amt),   // المبلغ (رقم)
-        notes: notesValue      // البيان / الملاحظات
-    })
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          type: type,
+          amount: Number(amount),
+          notes: note
+        })
       });
       if (res.ok) {
         await loadStateFromSupabase();
         e.target.reset();
         Swal.fire({ icon: 'success', title: 'تمت العملية بنجاح', timer: 1200, showConfirmButton: false });
+      } else {
+        const errText = await res.text();
+        console.error('Save failed details:', errText);
+        Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الحركة بالسيرفر' });
       }
     } catch (err) {
+      console.error(err);
       Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الحركة بالسيرفر' });
     }
   });

@@ -1,4 +1,4 @@
-const SUPABASE_URL = 'https://wzznqnagjccxkqxlwuqu.supabase.co/rest/v1/transactions';
+const SUPABASE_URL = 'https://wzznqnagjccxkqxlwuqu.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_PmNID_cCg92YRghHV1WSYQ_043c7qgk'; // الصق مفتاح الـ anon الخاص بك هنا
 
 const DEFAULT_USER_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";

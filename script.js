@@ -1,4 +1,6 @@
-const API_BASE = `${window.location.origin}/api`;
+const SUPABASE_URL = 'https://wzznqnagjccxqxlwuqu.supabase.co';
+const SUPABASE_ANON_KEY = 'https://wzznqnagjccxkqxlwuqu.supabase.co/rest/v1/transactions'; // الصق مفتاح الـ anon الخاص بك هنا
+
 const DEFAULT_USER_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
 const DEFAULT_PASS_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 let authUserHash = localStorage.getItem('app_user_hash') || DEFAULT_USER_HASH;
@@ -7,7 +9,6 @@ let authPassHash = localStorage.getItem('app_pass_hash') || DEFAULT_PASS_HASH;
 // دالة تشفير SHA-256 للحماية
 async function hashText(text) {
   if (!crypto.subtle) {
-    // توافق فوري مع admin و 1234 على شبكة HTTP المحلية
     if (text === 'admin') return DEFAULT_USER_HASH;
     if (text === '1234') return DEFAULT_PASS_HASH;
     let hash = 0;
@@ -77,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// حالة بيانات النظام المعتمدة من السيرفر
+// حالة بيانات النظام المعتمدة
 let state = {
   drawerBalance: 0,
   logs: [],
@@ -87,24 +88,27 @@ let state = {
 };
 
 // ---------------- نظام تسجيل الدخول ----------------
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const user = document.getElementById('usernameInput').value.trim();
-  const pass = document.getElementById('passwordInput').value.trim();
-  const errorMsg = document.getElementById('loginError');
+const loginForm = document.getElementById('loginForm');
+if (loginForm) {
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const user = document.getElementById('usernameInput').value.trim();
+    const pass = document.getElementById('passwordInput').value.trim();
+    const errorMsg = document.getElementById('loginError');
 
-  const inputUserHash = await hashText(user);
-  const inputPassHash = await hashText(pass);
+    const inputUserHash = await hashText(user);
+    const inputPassHash = await hashText(pass);
 
-  if (inputUserHash === authUserHash && inputPassHash === authPassHash) {
-    sessionStorage.setItem('isLoggedIn', inputPassHash);
-    errorMsg.style.display = 'none';
-    e.target.reset();
-    checkAuth();
-  } else {
-    errorMsg.style.display = 'block';
-  }
-});
+    if (inputUserHash === authUserHash && inputPassHash === authPassHash) {
+      sessionStorage.setItem('isLoggedIn', inputPassHash);
+      if (errorMsg) errorMsg.style.display = 'none';
+      e.target.reset();
+      checkAuth();
+    } else {
+      if (errorMsg) errorMsg.style.display = 'block';
+    }
+  });
+}
 
 function logout() {
   Swal.fire({
@@ -136,27 +140,42 @@ function checkAuth() {
     if (welcomeSec) welcomeSec.style.display = 'none';
     if (loginSec) loginSec.classList.add('hidden');
     if (appSec) appSec.classList.remove('hidden');
-    loadStateFromDB();
+    loadStateFromSupabase();
   } else {
     if (appSec) appSec.classList.add('hidden');
   }
 }
 
-// ---------------- جلب البيانات الحقيقية من السيرفر ----------------
-async function loadStateFromDB() {
+// ---------------- جلب البيانات من Supabase ----------------
+async function loadStateFromSupabase() {
   try {
-    const res = await fetch(`${API_BASE}/state`);
-    if (res.ok) {
-      const data = await res.json();
-      state.drawerBalance = Number(data.drawerBalance || 0);
-      state.logs = data.logs || data.transactions || [];
-      state.services = data.services || [];
-      state.debtors = data.debtors || [];
-      state.creditors = data.creditors || [];
-      renderUI();
-    }
+    const headers = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+    };
+
+    const [txRes, srvRes, debRes, credRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/transactions?select=*&order=created_at.desc`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/services?select=*`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/debtors?select=*`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/creditors?select=*`, { headers })
+    ]);
+
+    state.logs = txRes.ok ? await txRes.json() : [];
+    state.services = srvRes.ok ? await srvRes.json() : [];
+    state.debtors = debRes.ok ? await debRes.json() : [];
+    state.creditors = credRes.ok ? await credRes.json() : [];
+
+    // حساب رصيد الدرج تراكمياً من الحركات (in - out)
+    state.drawerBalance = state.logs.reduce((acc, log) => {
+      const amt = Number(log.amount || 0);
+      const isInc = String(log.type || '').toLowerCase() === 'in';
+      return isInc ? acc + amt : acc - amt;
+    }, 0);
+
+    renderUI();
   } catch (err) {
-    console.error("فشل الاتصال بالسيرفر:", err);
+    console.error("فشل الاتصال بـ Supabase:", err);
   }
 }
 
@@ -184,82 +203,108 @@ function switchTab(e, tabId) {
 }
 
 // 1. حركة الدرج
-document.getElementById('drawerForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const type = document.getElementById('drawerTxType').value;
-  const amount = parseFloat(document.getElementById('drawerTxAmount').value) || 0;
-  const note = document.getElementById('drawerTxNote').value || '';
+const drawerForm = document.getElementById('drawerForm');
+if (drawerForm) {
+  drawerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const type = document.getElementById('drawerTxType').value;
+    const amount = parseFloat(document.getElementById('drawerTxAmount').value) || 0;
+    const note = document.getElementById('drawerTxNote').value || '';
 
-  try {
-    const res = await fetch(`${API_BASE}/transactions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, amount, note })
-    });
-    if (res.ok) {
-      await loadStateFromDB();
-      e.target.reset();
-      Swal.fire({ icon: 'success', title: 'تمت العملية بنجاح', timer: 1200, showConfirmButton: false });
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({ type, amount, notes: note })
+      });
+      if (res.ok) {
+        await loadStateFromSupabase();
+        e.target.reset();
+        Swal.fire({ icon: 'success', title: 'تمت العملية بنجاح', timer: 1200, showConfirmButton: false });
+      }
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الحركة بالسيرفر' });
     }
-  } catch (err) {
-    Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الحركة بالسيرفر' });
-  }
-});
+  });
+}
 
 // 2. أرقام الخدمة
-document.getElementById('serviceForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const num = document.getElementById('serviceNumInput').value;
-  const client = document.getElementById('serviceClientInput').value;
-  const cost = parseFloat(document.getElementById('serviceCostInput').value) || 0;
-  const status = document.getElementById('servicePaymentStatus').value;
+const serviceForm = document.getElementById('serviceForm');
+if (serviceForm) {
+  serviceForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const num = document.getElementById('serviceNumInput').value;
+    const client = document.getElementById('serviceClientInput').value;
+    const cost = parseFloat(document.getElementById('serviceCostInput').value) || 0;
+    const status = document.getElementById('servicePaymentStatus').value;
 
-  try {
-    await fetch(`${API_BASE}/services`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ num, client, cost, status })
-    });
-
-    if (status === 'paid') {
-      await fetch(`${API_BASE}/transactions`, {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/services`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'in', amount: cost, note: `تحصيل خدمة (${num}) - العميل: ${client}` })
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ num, client, cost, status })
       });
-    }
 
-    await loadStateFromDB();
-    e.target.reset();
-    Swal.fire({ icon: 'success', title: 'تم حفظ الخدمة بالسيرفر', timer: 1200, showConfirmButton: false });
-  } catch (err) {
-    Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الخدمة' });
-  }
-});
+      if (status === 'paid') {
+        await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ type: 'in', amount: cost, notes: `تحصيل خدمة (${num}) - العميل: ${client}` })
+        });
+      }
+
+      await loadStateFromSupabase();
+      e.target.reset();
+      Swal.fire({ icon: 'success', title: 'تم حفظ الخدمة بالسيرفر', timer: 1200, showConfirmButton: false });
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الخدمة' });
+    }
+  });
+}
 
 // 3. مدينون (إضافة وسداد)
-document.getElementById('debtorForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const name = document.getElementById('debtorName').value;
-  const amount = parseFloat(document.getElementById('debtorAmount').value) || 0;
-  const reason = document.getElementById('debtorReason').value;
+const debtorForm = document.getElementById('debtorForm');
+if (debtorForm) {
+  debtorForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('debtorName').value;
+    const amount = parseFloat(document.getElementById('debtorAmount').value) || 0;
+    const reason = document.getElementById('debtorReason').value;
 
-  try {
-    await fetch(`${API_BASE}/debtors`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, amount, reason })
-    });
-    await loadStateFromDB();
-    e.target.reset();
-    Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
-  } catch (err) {
-    Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة المدين' });
-  }
-});
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/debtors`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ name, amount, reason })
+      });
+      await loadStateFromSupabase();
+      e.target.reset();
+      Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة المدين' });
+    }
+  });
+}
 
 function payDebtor(id) {
-  const debtor = state.debtors.find(d => d.id === id);
+  const debtor = state.debtors.find(d => d.id == id);
   if (!debtor) return;
 
   Swal.fire({
@@ -278,17 +323,25 @@ function payDebtor(id) {
       const payAmount = parseFloat(result.value);
       if (payAmount > 0 && payAmount <= debtor.amount) {
         const remaining = debtor.amount - payAmount;
-        await fetch(`${API_BASE}/debtors/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+        await fetch(`${SUPABASE_URL}/rest/v1/debtors?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
           body: JSON.stringify({ amount: remaining })
         });
-        await fetch(`${API_BASE}/transactions`, {
+        await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'out', amount: payAmount, note: `سداد دين لـ: ${debtor.name}` })
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ type: 'out', amount: payAmount, notes: `سداد دين لـ: ${debtor.name}` })
         });
-        await loadStateFromDB();
+        await loadStateFromSupabase();
       }
     }
   });
@@ -304,12 +357,16 @@ if (creditorForm) {
     const reason = document.getElementById('creditorReason').value;
 
     try {
-      await fetch(`${API_BASE}/creditors`, {
+      await fetch(`${SUPABASE_URL}/rest/v1/creditors`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
         body: JSON.stringify({ name, amount, reason })
       });
-      await loadStateFromDB();
+      await loadStateFromSupabase();
       e.target.reset();
       Swal.fire({ icon: 'success', title: 'تم إضافة الدائن', timer: 1200, showConfirmButton: false });
     } catch (err) {
@@ -319,7 +376,7 @@ if (creditorForm) {
 }
 
 function collectCreditor(id) {
-  const creditor = state.creditors.find(c => c.id === id);
+  const creditor = state.creditors.find(c => c.id == id);
   if (!creditor) return;
 
   Swal.fire({
@@ -338,17 +395,25 @@ function collectCreditor(id) {
       const collectAmount = parseFloat(result.value);
       if (collectAmount > 0 && collectAmount <= creditor.amount) {
         const remaining = creditor.amount - collectAmount;
-        await fetch(`${API_BASE}/creditors/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+        await fetch(`${SUPABASE_URL}/rest/v1/creditors?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
           body: JSON.stringify({ amount: remaining })
         });
-        await fetch(`${API_BASE}/transactions`, {
+        await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'in', amount: collectAmount, note: `تحصيل مستحق من: ${creditor.name}` })
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ type: 'in', amount: collectAmount, notes: `تحصيل مستحق من: ${creditor.name}` })
         });
-        await loadStateFromDB();
+        await loadStateFromSupabase();
       }
     }
   });
@@ -366,8 +431,11 @@ function deleteLog(id) {
     cancelButtonText: 'إلغاء'
   }).then(async (result) => {
     if (result.isConfirmed) {
-      await fetch(`${API_BASE}/transactions/${id}`, { method: 'DELETE' });
-      await loadStateFromDB();
+      await fetch(`${SUPABASE_URL}/rest/v1/transactions?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      await loadStateFromSupabase();
     }
   });
 }
@@ -384,8 +452,11 @@ function deleteService(id) {
     cancelButtonText: 'إلغاء'
   }).then(async (result) => {
     if (result.isConfirmed) {
-      await fetch(`${API_BASE}/services/${id}`, { method: 'DELETE' });
-      await loadStateFromDB();
+      await fetch(`${SUPABASE_URL}/rest/v1/services?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      await loadStateFromSupabase();
     }
   });
 }
@@ -426,12 +497,13 @@ function renderUI() {
     drawerBody.innerHTML = (state.logs || []).map(log => {
       const isIncome = String(log.type || '').toLowerCase() === 'in';
       const amt = Number(log.amount || 0).toFixed(2);
+      const timeStr = log.created_at ? new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
       return `
         <tr>
-          <td>${log.time || '--:--'}</td>
+          <td>${timeStr}</td>
           <td><span class="badge ${isIncome ? 'badge-success' : 'badge-danger'}">${isIncome ? 'إيداع (+)' : 'سحب (-)'}</span></td>
           <td><strong>${amt} ج.م</strong></td>
-          <td>${log.note || ''}</td>
+          <td>${log.notes || ''}</td>
           <td><button class="btn-danger btn-small" onclick="deleteLog(${log.id})">حذف</button></td>
         </tr>
       `;

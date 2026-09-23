@@ -604,9 +604,9 @@ tbody tr:hover {
   .sidebar { 
     width: 100%; 
     height: auto; 
-    position: relative; 
+    /* position: relative;  */
     border-left: none;
     border-bottom: 1px solid var(--border-subtle);
   }
-  .main-content { padding: 16px; }
+  .main-content { padding: 10px; }
 }

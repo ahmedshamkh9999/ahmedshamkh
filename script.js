@@ -350,12 +350,21 @@ function collectCreditor(id) {
     if (result.isConfirmed) {
       const collectAmount = parseFloat(result.value);
       if (collectAmount > 0 && collectAmount <= creditor.amount) {
-        const remaining = creditor.amount - collectAmount;
-        await fetch(`${SUPABASE_URL}/rest/v1/creditors?id=eq.${id}`, {
-          method: 'PATCH',
-          headers: getSupabaseHeaders(),
-          body: JSON.stringify({ amount: remaining })
-        });
+        const remaining = Number((creditor.amount - collectAmount).toFixed(2));
+
+        if (remaining <= 0) {
+          await fetch(`${SUPABASE_URL}/rest/v1/creditors?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: getSupabaseHeaders()
+          });
+        } else {
+          await fetch(`${SUPABASE_URL}/rest/v1/creditors?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: getSupabaseHeaders(),
+            body: JSON.stringify({ amount: remaining })
+          });
+        }
+
         await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
           headers: getSupabaseHeaders(),

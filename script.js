@@ -238,7 +238,7 @@ async function checkAuth() {
     if (appSec) appSec.classList.remove('hidden');
     
     await checkUserRole();
-    addLogoutButtonToSidebar(); // إضافة زر الخروج للقائمة الجانبية
+    
 
     loadStateFromSupabase();
   } else {

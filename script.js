@@ -3,7 +3,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_PmNID_cCg92YRghHV1WSYQ_043c7qgk';
 
 // دالة جلب الهيدرز مع توكن الجلسة الحقيقي
 function getSupabaseHeaders() {
-  const token = localStorage.getItem('sb_access_token');
+  const token = sessionStorage.getItem('sb_access_token');
   return {
     'apikey': SUPABASE_ANON_KEY,
     'Authorization': token ? `Bearer ${token}` : `Bearer ${SUPABASE_ANON_KEY}`,
@@ -30,7 +30,6 @@ async function checkSystemStatus() {
       const data = await res.json();
       if (data && data.length > 0) {
         const setting = data[0];
-        // التحقق مما إذا كان النظام مقفلاً بناءً على الأعمدة الفعلية
         if (setting.status === 'locked' || setting.active === false) {
           document.body.innerHTML = `            
             <div style="
@@ -111,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (res.ok) {
           const data = await res.json();
-          localStorage.setItem('sb_access_token', data.access_token);
+          sessionStorage.setItem('sb_access_token', data.access_token);
           if (errorMsg) errorMsg.style.display = 'none';
           e.target.reset();
           checkAuth();
@@ -154,7 +153,7 @@ function logout() {
     cancelButtonText: 'cancel'
   }).then(async (result) => {
     if (result.isConfirmed) {
-      localStorage.removeItem('sb_access_token');
+      sessionStorage.removeItem('sb_access_token');
       checkAuth();
       const welcomeSec = document.getElementById('welcomeSection');
       if (welcomeSec) welcomeSec.style.display = 'flex';
@@ -163,13 +162,12 @@ function logout() {
 }
 
 async function checkAuth() {
-  const token = localStorage.getItem('sb_access_token');
+  const token = sessionStorage.getItem('sb_access_token');
   const welcomeSec = document.getElementById('welcomeSection');
   const loginSec = document.getElementById('loginSection');
   const appSec = document.getElementById('appSection');
 
   if (token) {
-    // التحقق من حالة القفل قبل عرض التطبيق للعميل
     const isActive = await checkSystemStatus();
     if (!isActive) return;
 
@@ -195,7 +193,7 @@ async function loadStateFromSupabase() {
     ]);
 
     if (txRes.status === 401 || srvRes.status === 401) {
-      localStorage.removeItem('sb_access_token');
+      sessionStorage.removeItem('sb_access_token');
       checkAuth();
       return;
     }

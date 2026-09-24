@@ -17,43 +17,8 @@ let state = {
   logs: [],
   services: [],
   debtors: [],
-  creditors: [],
-  currentUser: null, // تخزين بيانات المستخدم الحالي والصلاحية
-  isAdmin: false
+  creditors: []
 };
-
-// ---------------- دالة جلب بيانات المستخدم والصلاحية ----------------
-async function getCurrentUserInfo() {
-  try {
-    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: getSupabaseHeaders()
-    });
-    if (!userRes.ok) return null;
-    const userData = await userRes.json();
-    
-    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userData.id}&select=*`, {
-      headers: getSupabaseHeaders()
-    });
-    
-    let role = 'user';
-    if (profileRes.ok) {
-      const profileData = await profileRes.json();
-      if (profileData && profileData.length > 0) {
-        role = profileData[0].role || 'user';
-      }
-    }
-    
-    return {
-      id: userData.id,
-      email: userData.email,
-      role: role,
-      isAdmin: role === 'admin'
-    };
-  } catch (err) {
-    console.error("خطأ في جلب بيانات المستخدم:", err);
-    return null;
-  }
-}
 
 // ---------------- نظام التحقق من حالة النظام (قفل/فتح) ----------------
 async function checkSystemStatus() {
@@ -65,43 +30,44 @@ async function checkSystemStatus() {
       const data = await res.json();
       if (data && data.length > 0) {
         const setting = data[0];
+        // التحقق مما إذا كان النظام مقفلاً بناءً على الأعمدة الفعلية
         if (setting.status === 'locked' || setting.active === false) {
           document.body.innerHTML = `            
             <div style="
-              display: flex; 
-              justify-content: center; 
-              align-items: center; 
-              height: 100vh; 
-              background: linear-gradient(135deg, #090d16 0%, #111827 50%, #1e1b4b 100%); 
-              font-family: 'Cairo', sans-serif; 
-              text-align: center; 
-              direction: rtl; 
-              padding: 20px;
-              margin: 0;
-            ">
-              <div style="
-                background: rgba(17, 24, 39, 0.75);
-                backdrop-filter: blur(16px);
-                -webkit-backdrop-filter: blur(16px);
-                border: 1px solid rgba(239, 68, 68, 0.25);
-                border-radius: 20px;
-                padding: 45px 30px;
-                max-width: 450px;
-                width: 100%;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-              ">
-                <div style="font-size: 48px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));">⚠️</div>
-                <h2 style="color: #f87171; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">تم إيقاف النظام لعمل إجراء صيانة</h2>
-                <h2 style="color: #dfd8d8; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">نأسف على الإزعاج، النظام غير متاح حالياً</h2>  
-                <p style="color: #9ca3af; font-size: 20px; line-height: 1.6; margin-bottom: 25px;">يرجى التواصل مع الدعم الفني من خلال الرقم:</p>
-                <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239, 68, 68, 0.3); padding: 10px; border-radius: 10px; color: #fca5a5; font-size: 16px; font-weight: bold; direction: ltr; display: inline-block; margin-bottom: 20px;">
-                  01040810091
-                </div>
-                <div style="font-size: 12px; color: #eef2f7; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 10px;">
-                  نظام إدارة الأعمال المؤمّن 🔒
-                </div>
-              </div>
-            </div>
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+    background: linear-gradient(135deg, #090d16 0%, #111827 50%, #1e1b4b 100%); 
+    font-family: 'Cairo', sans-serif; 
+    text-align: center; 
+    direction: rtl; 
+    padding: 20px;
+    margin: 0;
+  ">
+    <div style="
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 20px;
+      padding: 45px 30px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    ">
+      <div style="font-size: 48px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));">⚠️</div>
+      <h2 style="color: #f87171; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">تم إيقاف النظام لعمل إجراء صيانة</h2>
+      <h2 style="color: #dfd8d8; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">نأسف على الإزعاج، النظام غير متاح حالياً</h2>  
+      <p style="color: #9ca3af; font-size: 20px; line-height: 1.6; margin-bottom: 25px;">يرجى التواصل مع الدعم الفني من خلال الرقم:</p>
+      <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239, 68, 68, 0.3); padding: 10px; border-radius: 10px; color: #fca5a5; font-size: 16px; font-weight: bold; direction: ltr; display: inline-block; margin-bottom: 20px;">
+        01040810091
+      </div>
+      <div style="font-size: 12px; color: #eef2f7; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 10px;">
+        نظام إدارة الأعمال المؤمّن 🔒
+      </div>
+    </div>
+  </div>
           `;
           return false;
         }
@@ -113,12 +79,37 @@ async function checkSystemStatus() {
   return true;
 }
 
-// ---------------- نظام التحقق من صلاحيات المستخدم (منع الحذف فقط للمستخدم العادي) ----------------
+// ---------------- نظام التحقق من صلاحيات المستخدم (Role Check) ----------------
 async function checkUserRole() {
-  if (state.currentUser && !state.currentUser.isAdmin) {
-    document.querySelectorAll('button[onclick*="delete"]').forEach(el => {
-      el.style.display = 'none';
+  try {
+    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: getSupabaseHeaders()
     });
+    
+    if (!userRes.ok) return;
+    const userData = await userRes.json();
+    const userId = userData.id;
+
+    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=role`, {
+      headers: getSupabaseHeaders()
+    });
+
+    if (profileRes.ok) {
+      const profileData = await profileRes.json();
+      if (profileData && profileData.length > 0) {
+        const role = profileData[0].role;
+
+        // إذا لم يكن المستخدم مديراً (Admin)، يتم إخفاء النماذج وأزرار التعديل والحذف
+        if (role !== 'admin') {
+          document.querySelectorAll('form, .btn-danger, button[onclick*="delete"], button[onclick*="pay"], button[onclick*="collect"]').forEach(el => {
+            el.style.display = 'none';
+          });
+          console.log("تم تفعيل وضع القراءة فقط للمستخدم العادي");
+        }
+      }
+    }
+  } catch (err) {
+    console.error("خطأ في التحقق من الصلاحيات:", err);
   }
 }
 
@@ -178,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (authForm) {
     authForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      Swal.fire('تنبيه', 'إدارة الحسابات تتم من لوحة تحكم الأدمن', 'info');
+      Swal.fire('تنبيه', 'إدارة الحسابات تتم من لوحة تحكم من ادمن ', 'info');
     });
   }
 
@@ -187,23 +178,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function logout() {
   Swal.fire({
-    title: 'تسجيل الخروج',
-    text: 'هل أنت متأكد من رغبتك في تسجيل الخروج؟',
+    title: 'log out',
+    text: 'going to log out, are you sure?',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#64748b',
-    confirmButtonText: 'نعم، تسجيل الخروج',
-    cancelButtonText: 'إلغاء'
+    confirmButtonText: 'yes, log out',
+    cancelButtonText: 'cancel'
   }).then(async (result) => {
     if (result.isConfirmed) {
       localStorage.removeItem('sb_access_token');
-      state.currentUser = null;
       checkAuth();
       const welcomeSec = document.getElementById('welcomeSection');
       if (welcomeSec) welcomeSec.style.display = 'flex';
-      const appSec = document.getElementById('appSection');
-      if (appSec) appSec.classList.add('hidden');
     }
   });
 }
@@ -215,6 +203,7 @@ async function checkAuth() {
   const appSec = document.getElementById('appSection');
 
   if (token) {
+    // التحقق من حالة القفل قبل عرض التطبيق للعميل
     const isActive = await checkSystemStatus();
     if (!isActive) return;
 
@@ -222,55 +211,28 @@ async function checkAuth() {
     if (loginSec) loginSec.classList.add('hidden');
     if (appSec) appSec.classList.remove('hidden');
     
-    // جلب الصلاحيات وتخزين معلومات المستخدم
-    state.currentUser = await getCurrentUserInfo();
-    state.isAdmin = state.currentUser ? state.currentUser.isAdmin : false;
-
+    // فحص دور المستخدم وصلاحياته بعد تسجيل الدخول مباشرة
     await checkUserRole();
+
     loadStateFromSupabase();
   } else {
     if (appSec) appSec.classList.add('hidden');
-    const welcomeSec = document.getElementById('welcomeSection');
-    if (welcomeSec) welcomeSec.style.display = 'flex';
   }
 }
 
-// ---------------- جلب البيانات من Supabase مع الفلترة حسب المستخدم ----------------
+// ---------------- جلب البيانات من Supabase ----------------
 async function loadStateFromSupabase() {
   try {
     const headers = getSupabaseHeaders();
-    
-    if (!state.currentUser) {
-      state.currentUser = await getCurrentUserInfo();
-      state.isAdmin = state.currentUser ? state.currentUser.isAdmin : false;
-    }
-
-    if (!state.currentUser) return;
-
-    let txUrl = `${SUPABASE_URL}/rest/v1/transactions?select=*&order=created_at.desc`;
-    let srvUrl = `${SUPABASE_URL}/rest/v1/services?select=*`;
-    let debUrl = `${SUPABASE_URL}/rest/v1/debtors?select=*`;
-    let credUrl = `${SUPABASE_URL}/rest/v1/creditors?select=*`;
-
-    // إذا لم يكن أدمن، يتم فصل وعزل كل البيانات الخاصة بالمستخدم الحالي فقط
-    if (!state.currentUser.isAdmin) {
-      const uid = state.currentUser.id;
-      txUrl += `&user_id=eq.${uid}`;
-      srvUrl += `&user_id=eq.${uid}`;
-      debUrl += `&user_id=eq.${uid}`;
-      credUrl += `&user_id=eq.${uid}`;
-    }
-
     const [txRes, srvRes, debRes, credRes] = await Promise.all([
-      fetch(txUrl, { headers }),
-      fetch(srvUrl, { headers }),
-      fetch(debUrl, { headers }),
-      fetch(credUrl, { headers })
+      fetch(`${SUPABASE_URL}/rest/v1/transactions?select=*&order=created_at.desc`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/services?select=*`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/debtors?select=*`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/creditors?select=*`, { headers })
     ]);
 
     if (txRes.status === 401 || srvRes.status === 401) {
       localStorage.removeItem('sb_access_token');
-      state.currentUser = null;
       checkAuth();
       return;
     }
@@ -290,56 +252,6 @@ async function loadStateFromSupabase() {
   } catch (err) {
     console.error("فشل الاتصال بـ Supabase:", err);
   }
-}
-
-// 3. نموذج إضافة مدين (مربوط بالمستخدم الحالي)
-const debtorForm = document.getElementById('debtorForm');
-if (debtorForm) {
-  debtorForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('debtorName').value;
-    const amount = parseFloat(document.getElementById('debtorAmount').value) || 0;
-    const reason = document.getElementById('debtorReason').value;
-    const userId = state.currentUser ? state.currentUser.id : null;
-
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/debtors`, {
-        method: 'POST',
-        headers: getSupabaseHeaders(),
-        body: JSON.stringify({ name, amount, reason, user_id: userId })
-      });
-      await loadStateFromSupabase();
-      e.target.reset();
-      Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
-    } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة المدين' });
-    }
-  });
-}
-
-// 4. نموذج إضافة دائن (مربوط بالمستخدم الحالي)
-const creditorForm2 = document.getElementById('creditorForm');
-if (creditorForm) {
-  creditorForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('creditorName').value;
-    const amount = parseFloat(document.getElementById('creditorAmount').value) || 0;
-    const reason = document.getElementById('creditorReason').value;
-    const userId = state.currentUser ? state.currentUser.id : null;
-
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/creditors`, {
-        method: 'POST',
-        headers: getSupabaseHeaders(),
-        body: JSON.stringify({ name, amount, reason, user_id: userId })
-      });
-      await loadStateFromSupabase();
-      e.target.reset();
-      Swal.fire({ icon: 'success', title: 'تم إضافة الدائن', timer: 1200, showConfirmButton: false });
-    } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة الدائن' });
-    }
-  });
 }
 
 // ---------------- التنقل بين التبويبات ----------------
@@ -364,7 +276,7 @@ function switchTab(e, tabId) {
   }
 }
 
-// 1. نموذج الدرج (إرفاق user_id تلقائياً)
+// 1. نموذج الدرج
 const drawerForm = document.getElementById('drawerForm');
 if (drawerForm) {
   drawerForm.addEventListener('submit', async (e) => {
@@ -377,27 +289,22 @@ if (drawerForm) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
         method: 'POST',
         headers: getSupabaseHeaders(),
-        body: JSON.stringify({ 
-          type, 
-          amount: Number(amount), 
-          notes: note,
-          user_id: state.currentUser ? state.currentUser.id : null 
-        })
+        body: JSON.stringify({ type, amount: Number(amount), notes: note })
       });
       if (res.ok) {
         await loadStateFromSupabase();
         e.target.reset();
-        Swal.fire({ icon: 'success', title: 'تم الحفظ بنجاح', timer: 1200, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'success fully', timer: 1200, showConfirmButton: false });
       } else {
-        Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ المعاملة' });
+        Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the transaction' });
       }
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ المعاملة' });
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the transaction' });
     }
   });
 }
 
-// 2. أرقام الخدمة (إرفاق user_id تلقائياً)
+// 2. أرقام الخدمة
 const serviceForm = document.getElementById('serviceForm');
 if (serviceForm) {
   serviceForm.addEventListener('submit', async (e) => {
@@ -406,34 +313,33 @@ if (serviceForm) {
     const client = document.getElementById('serviceClientInput').value;
     const cost = parseFloat(document.getElementById('serviceCostInput').value) || 0;
     const status = document.getElementById('servicePaymentStatus').value;
-    const userId = state.currentUser ? state.currentUser.id : null;
 
     try {
       await fetch(`${SUPABASE_URL}/rest/v1/services`, {
         method: 'POST',
         headers: getSupabaseHeaders(),
-        body: JSON.stringify({ num, client, cost, status, user_id: userId })
+        body: JSON.stringify({ num, client, cost, status })
       });
 
       if (status === 'paid') {
         await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
           headers: getSupabaseHeaders(),
-          body: JSON.stringify({ type: 'in', amount: cost, notes: `تحصيل خدمة (${num}) - العميل: ${client}`, user_id: userId })
+          body: JSON.stringify({ type: 'in', amount: cost, notes: `تحصيل خدمة (${num}) - العميل: ${client}` })
         });
       }
 
       await loadStateFromSupabase();
       e.target.reset();
-      Swal.fire({ icon: 'success', title: 'تم الحفظ بنجاح', timer: 1200, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'success fully', timer: 1200, showConfirmButton: false });
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الخدمة' });
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the service' });
     }
   });
 }
 
 // 3. مدينون
-const debtorForm3 = document.getElementById('debtorForm');
+const debtorForm = document.getElementById('debtorForm');
 if (debtorForm) {
   debtorForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -449,9 +355,9 @@ if (debtorForm) {
       });
       await loadStateFromSupabase();
       e.target.reset();
-      Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'success fully add the debtor', timer: 1200, showConfirmButton: false });
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة المدين' });
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to add the debtor' });
     }
   });
 }
@@ -493,7 +399,7 @@ function payDebtor(id) {
         await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
           headers: getSupabaseHeaders(),
-          body: JSON.stringify({ type: 'out', amount: payAmount, notes: `سداد دين لـ: ${debtor.name}`, user_id: state.currentUser ? state.currentUser.id : null })
+          body: JSON.stringify({ type: 'out', amount: payAmount, notes: `سداد دين لـ: ${debtor.name}` })
         });
         await loadStateFromSupabase();
       }
@@ -562,7 +468,7 @@ function collectCreditor(id) {
         await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
           headers: getSupabaseHeaders(),
-          body: JSON.stringify({ type: 'in', amount: collectAmount, notes: `تحصيل مستحق من: ${creditor.name}`, user_id: state.currentUser ? state.currentUser.id : null })
+          body: JSON.stringify({ type: 'in', amount: collectAmount, notes: `تحصيل مستحق من: ${creditor.name}` })
         });
         await loadStateFromSupabase();
       }
@@ -572,14 +478,14 @@ function collectCreditor(id) {
 
 function deleteLog(id) {
   Swal.fire({
-    title: 'حذف المعاملة',
-    text: 'هل أنت متأكد من حذف هذه المعاملة؟',
+    title: 'Delete Transaction',
+    text: 'Are you sure you want to delete this transaction?',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#64748b',
-    confirmButtonText: 'نعم، حذف',
-    cancelButtonText: 'إلغاء'
+    confirmButtonText: 'yes, delete',
+    cancelButtonText: 'cancel'
   }).then(async (result) => {
     if (result.isConfirmed) {
       await fetch(`${SUPABASE_URL}/rest/v1/transactions?id=eq.${id}`, {
@@ -593,14 +499,14 @@ function deleteLog(id) {
 
 function deleteService(id) {
   Swal.fire({
-    title: 'حذف الخدمة',
-    text: 'هل أنت متأكد من حذف هذه الخدمة؟',
+    title: 'Delete Service',
+    text: 'Are you sure you want to delete this service?',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#64748b',
-    confirmButtonText: 'نعم، حذف',
-    cancelButtonText: 'إلغاء'
+    confirmButtonText: 'yes, delete',
+    cancelButtonText: 'cancel'
   }).then(async (result) => {
     if (result.isConfirmed) {
       await fetch(`${SUPABASE_URL}/rest/v1/services?id=eq.${id}`, {
@@ -707,6 +613,4 @@ function renderUI() {
       </tr>
     `).join('');
   }
-
-  checkUserRole();
 }

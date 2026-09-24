@@ -33,10 +33,10 @@ async function checkSystemStatus() {
         // التحقق مما إذا كان النظام مقفلاً بناءً على الأعمدة الفعلية
         if (setting.status === 'locked' || setting.active === false) {
           document.body.innerHTML = `
-            <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0b0f19; color: #f87171; font-family: Cairo; text-align: center; direction: rtl; padding: 20px;">
+            <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0b0f19; color: #f50000; font-family: Cairo; text-align: center; direction: rtl; padding: 20px;">
               <div>
                 <h2 style="font-size: 24px; margin-bottom: 10px;">⚠️ تم إيقاف النظام اجراء صيانة</h2>
-                <p style="color: #9ca3af;">يرجى التواصل مع الدعم الفني من خلال رقم 01040810091</p>
+                <p style="color: #f3f5f8;">يرجى التواصل مع الدعم الفني من خلال رقم 01040810091</p>
               </div>
             </div>
           `;

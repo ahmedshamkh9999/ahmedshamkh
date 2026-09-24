@@ -79,40 +79,6 @@ async function checkSystemStatus() {
   return true;
 }
 
-// ---------------- نظام التحقق من صلاحيات المستخدم (Role Check) ----------------
-async function checkUserRole() {
-  try {
-    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: getSupabaseHeaders()
-    });
-    
-    if (!userRes.ok) return;
-    const userData = await userRes.json();
-    const userId = userData.id;
-
-    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=role`, {
-      headers: getSupabaseHeaders()
-    });
-
-    if (profileRes.ok) {
-      const profileData = await profileRes.json();
-      if (profileData && profileData.length > 0) {
-        const role = profileData[0].role;
-
-        // إذا لم يكن المستخدم مديراً (Admin)، يتم إخفاء النماذج وأزرار التعديل والحذف
-        if (role !== 'admin') {
-          document.querySelectorAll('form, .btn-danger, button[onclick*="delete"], button[onclick*="pay"], button[onclick*="collect"]').forEach(el => {
-            el.style.display = 'none';
-          });
-          console.log("تم تفعيل وضع القراءة فقط للمستخدم العادي");
-        }
-      }
-    }
-  } catch (err) {
-    console.error("خطأ في التحقق من الصلاحيات:", err);
-  }
-}
-
 // ---------------- نظام تسجيل الدخول عبر Supabase Auth ----------------
 document.addEventListener('DOMContentLoaded', () => {
   const startBtn = document.getElementById('startBtn');
@@ -210,9 +176,6 @@ async function checkAuth() {
     if (welcomeSec) welcomeSec.style.display = 'none';
     if (loginSec) loginSec.classList.add('hidden');
     if (appSec) appSec.classList.remove('hidden');
-    
-    // فحص دور المستخدم وصلاحياته بعد تسجيل الدخول مباشرة
-    await checkUserRole();
 
     loadStateFromSupabase();
   } else {

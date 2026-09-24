@@ -17,8 +17,43 @@ let state = {
   logs: [],
   services: [],
   debtors: [],
-  creditors: []
+  creditors: [],
+  currentUser: null, // تخزين بيانات المستخدم الحالي والصلاحية
+  isAdmin: false
 };
+
+// ---------------- دالة جلب بيانات المستخدم والصلاحية ----------------
+async function getCurrentUserInfo() {
+  try {
+    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: getSupabaseHeaders()
+    });
+    if (!userRes.ok) return null;
+    const userData = await userRes.json();
+    
+    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userData.id}&select=*`, {
+      headers: getSupabaseHeaders()
+    });
+    
+    let role = 'user';
+    if (profileRes.ok) {
+      const profileData = await profileRes.json();
+      if (profileData && profileData.length > 0) {
+        role = profileData[0].role || 'user';
+      }
+    }
+    
+    return {
+      id: userData.id,
+      email: userData.email,
+      role: role,
+      isAdmin: role === 'admin'
+    };
+  } catch (err) {
+    console.error("خطأ في جلب بيانات المستخدم:", err);
+    return null;
+  }
+}
 
 // ---------------- نظام التحقق من حالة النظام (قفل/فتح) ----------------
 async function checkSystemStatus() {
@@ -80,34 +115,10 @@ async function checkSystemStatus() {
 
 // ---------------- نظام التحقق من صلاحيات المستخدم (منع الحذف فقط للمستخدم العادي) ----------------
 async function checkUserRole() {
-  try {
-    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: getSupabaseHeaders()
+  if (state.currentUser && !state.currentUser.isAdmin) {
+    document.querySelectorAll('button[onclick*="delete"]').forEach(el => {
+      el.style.display = 'none';
     });
-    
-    if (!userRes.ok) return;
-    const userData = await userRes.json();
-    const userId = userData.id;
-
-    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=role`, {
-      headers: getSupabaseHeaders()
-    });
-
-    if (profileRes.ok) {
-      const profileData = await profileRes.json();
-      if (profileData && profileData.length > 0) {
-        const role = profileData[0].role;
-
-        if (role !== 'admin') {
-          // إخفاء أزرار الحذف فقط للمستخدم العادي دون المساس بزر تسجيل الخروج
-          document.querySelectorAll('button[onclick*="delete"]').forEach(el => {
-            el.style.display = 'none';
-          });
-        }
-      }
-    }
-  } catch (err) {
-    console.error("خطأ في التحقق من الصلاحيات:", err);
   }
 }
 
@@ -187,6 +198,7 @@ function logout() {
   }).then(async (result) => {
     if (result.isConfirmed) {
       localStorage.removeItem('sb_access_token');
+      state.currentUser = null;
       checkAuth();
       const welcomeSec = document.getElementById('welcomeSection');
       if (welcomeSec) welcomeSec.style.display = 'flex';
@@ -210,8 +222,11 @@ async function checkAuth() {
     if (loginSec) loginSec.classList.add('hidden');
     if (appSec) appSec.classList.remove('hidden');
     
-    await checkUserRole();
+    // جلب الصلاحيات وتخزين معلومات المستخدم
+    state.currentUser = await getCurrentUserInfo();
+    state.isAdmin = state.currentUser ? state.currentUser.isAdmin : false;
 
+    await checkUserRole();
     loadStateFromSupabase();
   } else {
     if (appSec) appSec.classList.add('hidden');
@@ -220,13 +235,28 @@ async function checkAuth() {
   }
 }
 
-// ---------------- جلب البيانات من Supabase ----------------
+// ---------------- جلب البيانات من Supabase مع الفلترة حسب المستخدم ----------------
 async function loadStateFromSupabase() {
   try {
     const headers = getSupabaseHeaders();
+    
+    if (!state.currentUser) {
+      state.currentUser = await getCurrentUserInfo();
+      state.isAdmin = state.currentUser ? state.currentUser.isAdmin : false;
+    }
+
+    let txUrl = `${SUPABASE_URL}/rest/v1/transactions?select=*&order=created_at.desc`;
+    let srvUrl = `${SUPABASE_URL}/rest/v1/services?select=*`;
+
+    // إذا لم يكن أدمن، نقوم بفلترة المعاملات والخدمات لتخصصه وحده فقط
+    if (state.currentUser && !state.currentUser.isAdmin) {
+      txUrl += `&user_id=eq.${state.currentUser.id}`;
+      srvUrl += `&user_id=eq.${state.currentUser.id}`;
+    }
+
     const [txRes, srvRes, debRes, credRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/transactions?select=*&order=created_at.desc`, { headers }),
-      fetch(`${SUPABASE_URL}/rest/v1/services?select=*`, { headers }),
+      fetch(txUrl, { headers }),
+      fetch(srvUrl, { headers }),
       fetch(`${SUPABASE_URL}/rest/v1/debtors?select=*`, { headers }),
       fetch(`${SUPABASE_URL}/rest/v1/creditors?select=*`, { headers })
     ]);
@@ -276,7 +306,7 @@ function switchTab(e, tabId) {
   }
 }
 
-// 1. نموذج الدرج
+// 1. نموذج الدرج (إرفاق user_id تلقائياً)
 const drawerForm = document.getElementById('drawerForm');
 if (drawerForm) {
   drawerForm.addEventListener('submit', async (e) => {
@@ -289,7 +319,12 @@ if (drawerForm) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
         method: 'POST',
         headers: getSupabaseHeaders(),
-        body: JSON.stringify({ type, amount: Number(amount), notes: note })
+        body: JSON.stringify({ 
+          type, 
+          amount: Number(amount), 
+          notes: note,
+          user_id: state.currentUser ? state.currentUser.id : null 
+        })
       });
       if (res.ok) {
         await loadStateFromSupabase();
@@ -304,7 +339,7 @@ if (drawerForm) {
   });
 }
 
-// 2. أرقام الخدمة
+// 2. أرقام الخدمة (إرفاق user_id تلقائياً)
 const serviceForm = document.getElementById('serviceForm');
 if (serviceForm) {
   serviceForm.addEventListener('submit', async (e) => {
@@ -313,19 +348,20 @@ if (serviceForm) {
     const client = document.getElementById('serviceClientInput').value;
     const cost = parseFloat(document.getElementById('serviceCostInput').value) || 0;
     const status = document.getElementById('servicePaymentStatus').value;
+    const userId = state.currentUser ? state.currentUser.id : null;
 
     try {
       await fetch(`${SUPABASE_URL}/rest/v1/services`, {
         method: 'POST',
         headers: getSupabaseHeaders(),
-        body: JSON.stringify({ num, client, cost, status })
+        body: JSON.stringify({ num, client, cost, status, user_id: userId })
       });
 
       if (status === 'paid') {
         await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
           headers: getSupabaseHeaders(),
-          body: JSON.stringify({ type: 'in', amount: cost, notes: `تحصيل خدمة (${num}) - العميل: ${client}` })
+          body: JSON.stringify({ type: 'in', amount: cost, notes: `تحصيل خدمة (${num}) - العميل: ${client}`, user_id: userId })
         });
       }
 
@@ -399,7 +435,7 @@ function payDebtor(id) {
         await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
           headers: getSupabaseHeaders(),
-          body: JSON.stringify({ type: 'out', amount: payAmount, notes: `سداد دين لـ: ${debtor.name}` })
+          body: JSON.stringify({ type: 'out', amount: payAmount, notes: `سداد دين لـ: ${debtor.name}`, user_id: state.currentUser ? state.currentUser.id : null })
         });
         await loadStateFromSupabase();
       }
@@ -468,7 +504,7 @@ function collectCreditor(id) {
         await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
           headers: getSupabaseHeaders(),
-          body: JSON.stringify({ type: 'in', amount: collectAmount, notes: `تحصيل مستحق من: ${creditor.name}` })
+          body: JSON.stringify({ type: 'in', amount: collectAmount, notes: `تحصيل مستحق من: ${creditor.name}`, user_id: state.currentUser ? state.currentUser.id : null })
         });
         await loadStateFromSupabase();
       }

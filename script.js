@@ -32,13 +32,41 @@ async function checkSystemStatus() {
         const setting = data[0];
         // التحقق مما إذا كان النظام مقفلاً بناءً على الأعمدة الفعلية
         if (setting.status === 'locked' || setting.active === false) {
-          document.body.innerHTML = `
-            <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0b0f19; color: #f50000; font-family: Cairo; text-align: center; direction: rtl; padding: 20px;">
-              <div>
-                <h2 style="font-size: 45px; margin-bottom: 10px;">⚠️ تم إيقاف النظام لعمل اجراء صيانة </h2>
-                <p style="color: #f3f5f8;">يرجى التواصل مع الدعم الفني من خلال رقم 01040810091</p>
-              </div>
-            </div>
+          document.body.innerHTML = `              
+            <div style="
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+    background: linear-gradient(135deg, #090d16 0%, #111827 50%, #1e1b4b 100%); 
+    font-family: 'Cairo', sans-serif; 
+    text-align: center; 
+    direction: rtl; 
+    padding: 20px;
+    margin: 0;
+  ">
+    <div style="
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 20px;
+      padding: 45px 30px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    ">
+      <div style="font-size: 48px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));">⚠️</div>
+      <h2 style="color: #f87171; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">تم إيقاف النظام لعمل إجراء صيانة</h2>
+      <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin-bottom: 25px;">يرجى التواصل مع الدعم الفني من خلال الرقم:</p>
+      <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239, 68, 68, 0.3); padding: 10px; border-radius: 10px; color: #fca5a5; font-size: 16px; font-weight: bold; direction: ltr; display: inline-block; margin-bottom: 20px;">
+        01040810091
+      </div>
+      <div style="font-size: 12px; color: #4b5563; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 10px;">
+        نظام إدارة الأعمال المؤمّن 🔒
+      </div>
+    </div>
+  </div>
           `;
           return false;
         }

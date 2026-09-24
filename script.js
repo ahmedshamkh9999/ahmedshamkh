@@ -58,11 +58,11 @@ async function checkSystemStatus() {
     ">
       <div style="font-size: 48px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));">⚠️</div>
       <h2 style="color: #f87171; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">تم إيقاف النظام لعمل إجراء صيانة</h2>
-      <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin-bottom: 25px;">يرجى التواصل مع الدعم الفني من خلال الرقم:</p>
+      <p style="color: #9ca3af; font-size: 20px; line-height: 1.6; margin-bottom: 25px;">يرجى التواصل مع الدعم الفني من خلال الرقم:</p>
       <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239, 68, 68, 0.3); padding: 10px; border-radius: 10px; color: #fca5a5; font-size: 16px; font-weight: bold; direction: ltr; display: inline-block; margin-bottom: 20px;">
         01040810091
       </div>
-      <div style="font-size: 12px; color: #4b5563; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 10px;">
+      <div style="font-size: 12px; color: #eef2f7; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 10px;">
         نظام إدارة الأعمال المؤمّن 🔒
       </div>
     </div>

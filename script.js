@@ -35,8 +35,8 @@ async function checkSystemStatus() {
           document.body.innerHTML = `
             <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0b0f19; color: #f87171; font-family: Cairo; text-align: center; direction: rtl; padding: 20px;">
               <div>
-                <h2 style="font-size: 24px; margin-bottom: 10px;">⚠️ تم إيقاف النظام مؤقتاً</h2>
-                <p style="color: #9ca3af;">يرجى التواصل مع مسؤول النظام أو المطور لتفعيل الحساب.</p>
+                <h2 style="font-size: 24px; margin-bottom: 10px;">⚠️ تم إيقاف النظام لجراء صيانه</h2>
+                <p style="color: #9ca3af;">يرجى التواصل مع الدعم الفني من خلال رقم 01040810091</p>
               </div>
             </div>
           `;

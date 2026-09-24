@@ -20,6 +20,36 @@ let state = {
   creditors: []
 };
 
+// ---------------- نظام التحقق من حالة النظام (قفل/فتح) ----------------
+async function checkSystemStatus() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_settings?select=*`, {
+      headers: getSupabaseHeaders()
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const setting = data[0];
+        // التحقق مما إذا كان النظام مقفلاً بناءً على الأعمدة الفعلية
+        if (setting.status === 'locked' || setting.active === false) {
+          document.body.innerHTML = `
+            <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0b0f19; color: #f87171; font-family: Cairo; text-align: center; direction: rtl; padding: 20px;">
+              <div>
+                <h2 style="font-size: 24px; margin-bottom: 10px;">⚠️ تم إيقاف النظام مؤقتاً</h2>
+                <p style="color: #9ca3af;">يرجى التواصل مع مسؤول النظام أو المطور لتفعيل الحساب.</p>
+              </div>
+            </div>
+          `;
+          return false;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("فشل التحقق من حالة النظام:", err);
+  }
+  return true;
+}
+
 // ---------------- نظام تسجيل الدخول عبر Supabase Auth ----------------
 document.addEventListener('DOMContentLoaded', () => {
   const startBtn = document.getElementById('startBtn');
@@ -72,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // إخفاء إعدادات تغيير الباسورد القديمة أو تحويلها (يتم إدارتها من Supabase)
   const authForm = document.getElementById('changeAuthForm');
   if (authForm) {
     authForm.addEventListener('submit', (e) => {
@@ -86,14 +115,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function logout() {
   Swal.fire({
-    title: 'تسجيل الخروج',
-    text: 'هل أنت متأكد من تسجيل الخروج؟',
+    title: 'log out',
+    text: 'going to log out, are you sure?',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#64748b',
-    confirmButtonText: 'نعم، خروج',
-    cancelButtonText: 'إلغاء'
+    confirmButtonText: 'yes, log out',
+    cancelButtonText: 'cancel'
   }).then(async (result) => {
     if (result.isConfirmed) {
       localStorage.removeItem('sb_access_token');
@@ -104,13 +133,17 @@ function logout() {
   });
 }
 
-function checkAuth() {
+async function checkAuth() {
   const token = localStorage.getItem('sb_access_token');
   const welcomeSec = document.getElementById('welcomeSection');
   const loginSec = document.getElementById('loginSection');
   const appSec = document.getElementById('appSection');
 
   if (token) {
+    // التحقق من حالة القفل قبل عرض التطبيق للعميل
+    const isActive = await checkSystemStatus();
+    if (!isActive) return;
+
     if (welcomeSec) welcomeSec.style.display = 'none';
     if (loginSec) loginSec.classList.add('hidden');
     if (appSec) appSec.classList.remove('hidden');
@@ -194,12 +227,12 @@ if (drawerForm) {
       if (res.ok) {
         await loadStateFromSupabase();
         e.target.reset();
-        Swal.fire({ icon: 'success', title: 'تمت العملية بنجاح', timer: 1200, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'success fully', timer: 1200, showConfirmButton: false });
       } else {
-        Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الحركة بالسيرفر' });
+        Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the transaction' });
       }
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الحركة بالسيرفر' });
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the transaction' });
     }
   });
 }
@@ -231,9 +264,9 @@ if (serviceForm) {
 
       await loadStateFromSupabase();
       e.target.reset();
-      Swal.fire({ icon: 'success', title: 'تم حفظ الخدمة بالسيرفر', timer: 1200, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'success fully', timer: 1200, showConfirmButton: false });
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الخدمة' });
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the service' });
     }
   });
 }
@@ -255,9 +288,9 @@ if (debtorForm) {
       });
       await loadStateFromSupabase();
       e.target.reset();
-      Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'success fully add the debtor', timer: 1200, showConfirmButton: false });
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة المدين' });
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to add the debtor' });
     }
   });
 }
@@ -378,14 +411,14 @@ function collectCreditor(id) {
 
 function deleteLog(id) {
   Swal.fire({
-    title: 'حذف الحركة',
-    text: 'هل أنت متأكد من حذف هذه الحركة؟',
+    title: 'Delete Transaction',
+    text: 'Are you sure you want to delete this transaction?',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#64748b',
-    confirmButtonText: 'نعم، احذف',
-    cancelButtonText: 'إلغاء'
+    confirmButtonText: 'yes, delete',
+    cancelButtonText: 'cancel'
   }).then(async (result) => {
     if (result.isConfirmed) {
       await fetch(`${SUPABASE_URL}/rest/v1/transactions?id=eq.${id}`, {
@@ -399,14 +432,14 @@ function deleteLog(id) {
 
 function deleteService(id) {
   Swal.fire({
-    title: 'حذف الخدمة',
-    text: 'هل أنت متأكد من حذف هذه الخدمة؟',
+    title: 'Delete Service',
+    text: 'Are you sure you want to delete this service?',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#64748b',
-    confirmButtonText: 'نعم، احذف',
-    cancelButtonText: 'إلغاء'
+    confirmButtonText: 'yes, delete',
+    cancelButtonText: 'cancel'
   }).then(async (result) => {
     if (result.isConfirmed) {
       await fetch(`${SUPABASE_URL}/rest/v1/services?id=eq.${id}`, {

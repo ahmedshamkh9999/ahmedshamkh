@@ -30,43 +30,44 @@ async function checkSystemStatus() {
       const data = await res.json();
       if (data && data.length > 0) {
         const setting = data[0];
+        // التحقق مما إذا كان النظام مقفلاً بناءً على الأعمدة الفعلية
         if (setting.status === 'locked' || setting.active === false) {
           document.body.innerHTML = `            
             <div style="
-              display: flex; 
-              justify-content: center; 
-              align-items: center; 
-              height: 100vh; 
-              background: linear-gradient(135deg, #090d16 0%, #111827 50%, #1e1b4b 100%); 
-              font-family: 'Cairo', sans-serif; 
-              text-align: center; 
-              direction: rtl; 
-              padding: 20px;
-              margin: 0;
-            ">
-              <div style="
-                background: rgba(17, 24, 39, 0.75);
-                backdrop-filter: blur(16px);
-                -webkit-backdrop-filter: blur(16px);
-                border: 1px solid rgba(239, 68, 68, 0.25);
-                border-radius: 20px;
-                padding: 45px 30px;
-                max-width: 450px;
-                width: 100%;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-              ">
-                <div style="font-size: 48px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));">⚠️</div>
-                <h2 style="color: #f87171; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">تم إيقاف النظام لعمل إجراء صيانة</h2>
-                <h2 style="color: #dfd8d8; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">نأسف على الإزعاج، النظام غير متاح حالياً</h2>  
-                <p style="color: #9ca3af; font-size: 20px; line-height: 1.6; margin-bottom: 25px;">يرجى التواصل مع الدعم الفني من خلال الرقم:</p>
-                <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239, 68, 68, 0.3); padding: 10px; border-radius: 10px; color: #fca5a5; font-size: 16px; font-weight: bold; direction: ltr; display: inline-block; margin-bottom: 20px;">
-                  01040810091
-                </div>
-                <div style="font-size: 12px; color: #eef2f7; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 10px;">
-                  نظام إدارة الأعمال المؤمّن 🔒
-                </div>
-              </div>
-            </div>
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+    background: linear-gradient(135deg, #090d16 0%, #111827 50%, #1e1b4b 100%); 
+    font-family: 'Cairo', sans-serif; 
+    text-align: center; 
+    direction: rtl; 
+    padding: 20px;
+    margin: 0;
+  ">
+    <div style="
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 20px;
+      padding: 45px 30px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    ">
+      <div style="font-size: 48px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));">⚠️</div>
+      <h2 style="color: #f87171; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">تم إيقاف النظام لعمل إجراء صيانة</h2>
+      <h2 style="color: #dfd8d8; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">نأسف على الإزعاج، النظام غير متاح حالياً</h2>  
+      <p style="color: #9ca3af; font-size: 20px; line-height: 1.6; margin-bottom: 25px;">يرجى التواصل مع الدعم الفني من خلال الرقم:</p>
+      <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239, 68, 68, 0.3); padding: 10px; border-radius: 10px; color: #fca5a5; font-size: 16px; font-weight: bold; direction: ltr; display: inline-block; margin-bottom: 20px;">
+        01040810091
+      </div>
+      <div style="font-size: 12px; color: #eef2f7; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 10px;">
+        نظام إدارة الأعمال المؤمّن 🔒
+      </div>
+    </div>
+  </div>
           `;
           return false;
         }
@@ -78,7 +79,7 @@ async function checkSystemStatus() {
   return true;
 }
 
-// ---------------- نظام التحقق من صلاحيات المستخدم (منع الحذف فقط للمستخدم العادي) ----------------
+// ---------------- نظام التحقق من صلاحيات المستخدم (Role Check) ----------------
 async function checkUserRole() {
   try {
     const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
@@ -98,11 +99,12 @@ async function checkUserRole() {
       if (profileData && profileData.length > 0) {
         const role = profileData[0].role;
 
+        // إذا لم يكن المستخدم مديراً (Admin)، يتم إخفاء النماذج وأزرار التعديل والحذف
         if (role !== 'admin') {
-          // إخفاء أزرار الحذف فقط للمستخدم العادي دون المساس بزر تسجيل الخروج
-          document.querySelectorAll('button[onclick*="delete"]').forEach(el => {
+          document.querySelectorAll('form, .btn-danger, button[onclick*="delete"], button[onclick*="pay"], button[onclick*="collect"]').forEach(el => {
             el.style.display = 'none';
           });
+          console.log("تم تفعيل وضع القراءة فقط للمستخدم العادي");
         }
       }
     }
@@ -167,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (authForm) {
     authForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      Swal.fire('تنبيه', 'إدارة الحسابات تتم من لوحة تحكم الأدمن', 'info');
+      Swal.fire('تنبيه', 'إدارة الحسابات تتم من لوحة تحكم من ادمن ', 'info');
     });
   }
 
@@ -176,22 +178,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function logout() {
   Swal.fire({
-    title: 'تسجيل الخروج',
-    text: 'هل أنت متأكد من رغبتك في تسجيل الخروج؟',
+    title: 'log out',
+    text: 'going to log out, are you sure?',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#64748b',
-    confirmButtonText: 'نعم، تسجيل الخروج',
-    cancelButtonText: 'إلغاء'
+    confirmButtonText: 'yes, log out',
+    cancelButtonText: 'cancel'
   }).then(async (result) => {
     if (result.isConfirmed) {
       localStorage.removeItem('sb_access_token');
       checkAuth();
       const welcomeSec = document.getElementById('welcomeSection');
       if (welcomeSec) welcomeSec.style.display = 'flex';
-      const appSec = document.getElementById('appSection');
-      if (appSec) appSec.classList.add('hidden');
     }
   });
 }
@@ -203,6 +203,7 @@ async function checkAuth() {
   const appSec = document.getElementById('appSection');
 
   if (token) {
+    // التحقق من حالة القفل قبل عرض التطبيق للعميل
     const isActive = await checkSystemStatus();
     if (!isActive) return;
 
@@ -210,13 +211,12 @@ async function checkAuth() {
     if (loginSec) loginSec.classList.add('hidden');
     if (appSec) appSec.classList.remove('hidden');
     
+    // فحص دور المستخدم وصلاحياته بعد تسجيل الدخول مباشرة
     await checkUserRole();
 
     loadStateFromSupabase();
   } else {
     if (appSec) appSec.classList.add('hidden');
-    const welcomeSec = document.getElementById('welcomeSection');
-    if (welcomeSec) welcomeSec.style.display = 'flex';
   }
 }
 
@@ -294,12 +294,12 @@ if (drawerForm) {
       if (res.ok) {
         await loadStateFromSupabase();
         e.target.reset();
-        Swal.fire({ icon: 'success', title: 'تم الحفظ بنجاح', timer: 1200, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'success fully', timer: 1200, showConfirmButton: false });
       } else {
-        Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ المعاملة' });
+        Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the transaction' });
       }
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ المعاملة' });
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the transaction' });
     }
   });
 }
@@ -331,9 +331,9 @@ if (serviceForm) {
 
       await loadStateFromSupabase();
       e.target.reset();
-      Swal.fire({ icon: 'success', title: 'تم الحفظ بنجاح', timer: 1200, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'success fully', timer: 1200, showConfirmButton: false });
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حفظ الخدمة' });
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the service' });
     }
   });
 }
@@ -355,9 +355,9 @@ if (debtorForm) {
       });
       await loadStateFromSupabase();
       e.target.reset();
-      Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'success fully add the debtor', timer: 1200, showConfirmButton: false });
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة المدين' });
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to add the debtor' });
     }
   });
 }
@@ -478,14 +478,14 @@ function collectCreditor(id) {
 
 function deleteLog(id) {
   Swal.fire({
-    title: 'حذف المعاملة',
-    text: 'هل أنت متأكد من حذف هذه المعاملة؟',
+    title: 'Delete Transaction',
+    text: 'Are you sure you want to delete this transaction?',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#64748b',
-    confirmButtonText: 'نعم، حذف',
-    cancelButtonText: 'إلغاء'
+    confirmButtonText: 'yes, delete',
+    cancelButtonText: 'cancel'
   }).then(async (result) => {
     if (result.isConfirmed) {
       await fetch(`${SUPABASE_URL}/rest/v1/transactions?id=eq.${id}`, {
@@ -499,14 +499,14 @@ function deleteLog(id) {
 
 function deleteService(id) {
   Swal.fire({
-    title: 'حذف الخدمة',
-    text: 'هل أنت متأكد من حذف هذه الخدمة؟',
+    title: 'Delete Service',
+    text: 'Are you sure you want to delete this service?',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#64748b',
-    confirmButtonText: 'نعم، حذف',
-    cancelButtonText: 'إلغاء'
+    confirmButtonText: 'yes, delete',
+    cancelButtonText: 'cancel'
   }).then(async (result) => {
     if (result.isConfirmed) {
       await fetch(`${SUPABASE_URL}/rest/v1/services?id=eq.${id}`, {
@@ -613,6 +613,4 @@ function renderUI() {
       </tr>
     `).join('');
   }
-
-  checkUserRole();
 }

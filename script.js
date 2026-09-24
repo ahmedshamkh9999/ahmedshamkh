@@ -79,7 +79,7 @@ async function checkSystemStatus() {
   return true;
 }
 
-// ---------------- نظام التحقق من صلاحيات المستخدم (Role Check) ----------------
+// ---------------- نظام التحقق من صلاحيات المستخدم (منع الحذف فقط للمستخدم العادي) ----------------
 async function checkUserRole() {
   try {
     const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
@@ -99,12 +99,12 @@ async function checkUserRole() {
       if (profileData && profileData.length > 0) {
         const role = profileData[0].role;
 
-        // إذا لم يكن المستخدم مديراً (Admin)، يتم إخفاء النماذج وأزرار التعديل والحذف
+        // إذا لم يكن المستخدم مديراً (Admin)، نقوم فقط بإخفاء أزرار الحذف ونترك باقي التطبيق متاحاً للاستخدام بالكامل
         if (role !== 'admin') {
-          document.querySelectorAll('form, .btn-danger, button[onclick*="delete"], button[onclick*="pay"], button[onclick*="collect"]').forEach(el => {
+          document.querySelectorAll('.btn-danger, button[onclick*="delete"]').forEach(el => {
             el.style.display = 'none';
           });
-          console.log("تم تفعيل وضع القراءة فقط للمستخدم العادي");
+          console.log("تم السماح للمستخدم بالاستخدام والإضافة والسداد والتحصيل مع منع الحذف نهائياً");
         }
       }
     }
@@ -613,4 +613,7 @@ function renderUI() {
       </tr>
     `).join('');
   }
+
+  // إعادة تطبيق منع الحذف في حال تم إعادة رسم الجداول ديناميكياً
+  checkUserRole();
 }

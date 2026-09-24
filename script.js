@@ -240,16 +240,23 @@ async function loadStateFromSupabase() {
   try {
     const headers = getSupabaseHeaders();
     
+    // التأكد من جلب بيانات المستخدم الحالي أولاً وانتظارها
     if (!state.currentUser) {
       state.currentUser = await getCurrentUserInfo();
       state.isAdmin = state.currentUser ? state.currentUser.isAdmin : false;
     }
 
+    // إذا لم يتم جلب بيانات المستخدم بعد، نوقف الدالة مؤقتاً لحين توفر الجلسة وتجنب جلب البيانات بالخطأ
+    if (!state.currentUser) {
+      console.warn("جاري التحقق من بيانات المستخدم...");
+      return;
+    }
+
     let txUrl = `${SUPABASE_URL}/rest/v1/transactions?select=*&order=created_at.desc`;
     let srvUrl = `${SUPABASE_URL}/rest/v1/services?select=*`;
 
-    // إذا لم يكن أدمن، نقوم بفلترة المعاملات والخدمات لتخصصه وحده فقط
-    if (state.currentUser && !state.currentUser.isAdmin) {
+    // إذا لم يكن أدمن، يتم فلترة المعاملات والخدمات لتخصصه وحده فقط بدقة
+    if (!state.currentUser.isAdmin) {
       txUrl += `&user_id=eq.${state.currentUser.id}`;
       srvUrl += `&user_id=eq.${state.currentUser.id}`;
     }
@@ -263,6 +270,7 @@ async function loadStateFromSupabase() {
 
     if (txRes.status === 401 || srvRes.status === 401) {
       localStorage.removeItem('sb_access_token');
+      state.currentUser = null;
       checkAuth();
       return;
     }

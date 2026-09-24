@@ -240,32 +240,32 @@ async function loadStateFromSupabase() {
   try {
     const headers = getSupabaseHeaders();
     
-    // التأكد من جلب بيانات المستخدم الحالي أولاً وانتظارها
     if (!state.currentUser) {
       state.currentUser = await getCurrentUserInfo();
       state.isAdmin = state.currentUser ? state.currentUser.isAdmin : false;
     }
 
-    // إذا لم يتم جلب بيانات المستخدم بعد، نوقف الدالة مؤقتاً لحين توفر الجلسة وتجنب جلب البيانات بالخطأ
-    if (!state.currentUser) {
-      console.warn("جاري التحقق من بيانات المستخدم...");
-      return;
-    }
+    if (!state.currentUser) return;
 
     let txUrl = `${SUPABASE_URL}/rest/v1/transactions?select=*&order=created_at.desc`;
     let srvUrl = `${SUPABASE_URL}/rest/v1/services?select=*`;
+    let debUrl = `${SUPABASE_URL}/rest/v1/debtors?select=*`;
+    let credUrl = `${SUPABASE_URL}/rest/v1/creditors?select=*`;
 
-    // إذا لم يكن أدمن، يتم فلترة المعاملات والخدمات لتخصصه وحده فقط بدقة
+    // إذا لم يكن أدمن، يتم فصل وعزل كل البيانات الخاصة بالمستخدم الحالي فقط
     if (!state.currentUser.isAdmin) {
-      txUrl += `&user_id=eq.${state.currentUser.id}`;
-      srvUrl += `&user_id=eq.${state.currentUser.id}`;
+      const uid = state.currentUser.id;
+      txUrl += `&user_id=eq.${uid}`;
+      srvUrl += `&user_id=eq.${uid}`;
+      debUrl += `&user_id=eq.${uid}`;
+      credUrl += `&user_id=eq.${uid}`;
     }
 
     const [txRes, srvRes, debRes, credRes] = await Promise.all([
       fetch(txUrl, { headers }),
       fetch(srvUrl, { headers }),
-      fetch(`${SUPABASE_URL}/rest/v1/debtors?select=*`, { headers }),
-      fetch(`${SUPABASE_URL}/rest/v1/creditors?select=*`, { headers })
+      fetch(debUrl, { headers }),
+      fetch(credUrl, { headers })
     ]);
 
     if (txRes.status === 401 || srvRes.status === 401) {
@@ -290,6 +290,56 @@ async function loadStateFromSupabase() {
   } catch (err) {
     console.error("فشل الاتصال بـ Supabase:", err);
   }
+}
+
+// 3. نموذج إضافة مدين (مربوط بالمستخدم الحالي)
+const debtorForm = document.getElementById('debtorForm');
+if (debtorForm) {
+  debtorForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('debtorName').value;
+    const amount = parseFloat(document.getElementById('debtorAmount').value) || 0;
+    const reason = document.getElementById('debtorReason').value;
+    const userId = state.currentUser ? state.currentUser.id : null;
+
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/debtors`, {
+        method: 'POST',
+        headers: getSupabaseHeaders(),
+        body: JSON.stringify({ name, amount, reason, user_id: userId })
+      });
+      await loadStateFromSupabase();
+      e.target.reset();
+      Swal.fire({ icon: 'success', title: 'تم إضافة المدين', timer: 1200, showConfirmButton: false });
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة المدين' });
+    }
+  });
+}
+
+// 4. نموذج إضافة دائن (مربوط بالمستخدم الحالي)
+const creditorForm2 = document.getElementById('creditorForm');
+if (creditorForm) {
+  creditorForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('creditorName').value;
+    const amount = parseFloat(document.getElementById('creditorAmount').value) || 0;
+    const reason = document.getElementById('creditorReason').value;
+    const userId = state.currentUser ? state.currentUser.id : null;
+
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/creditors`, {
+        method: 'POST',
+        headers: getSupabaseHeaders(),
+        body: JSON.stringify({ name, amount, reason, user_id: userId })
+      });
+      await loadStateFromSupabase();
+      e.target.reset();
+      Swal.fire({ icon: 'success', title: 'تم إضافة الدائن', timer: 1200, showConfirmButton: false });
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل إضافة الدائن' });
+    }
+  });
 }
 
 // ---------------- التنقل بين التبويبات ----------------
@@ -383,7 +433,7 @@ if (serviceForm) {
 }
 
 // 3. مدينون
-const debtorForm = document.getElementById('debtorForm');
+const debtorForm3 = document.getElementById('debtorForm');
 if (debtorForm) {
   debtorForm.addEventListener('submit', async (e) => {
     e.preventDefault();

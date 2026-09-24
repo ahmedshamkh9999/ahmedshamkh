@@ -110,34 +110,6 @@ async function checkUserRole() {
   }
 }
 
-// ---------------- إضافة زر تسجيل الخروج للقائمة الجانبية تلقائياً ----------------
-function addLogoutButtonToSidebar() {
-  const links = document.querySelectorAll('.nav-link');
-  let settingsLink = null;
-  links.forEach(link => {
-    if (link.textContent.includes('إعدادات الحساب')) {
-      settingsLink = link;
-    }
-  });
-
-  if (settingsLink && !document.getElementById('customLogoutBtn')) {
-    const logoutLi = document.createElement('a');
-    logoutLi.id = 'customLogoutBtn';
-    logoutLi.href = '#';
-    logoutLi.className = 'nav-link';
-    logoutLi.style.color = '#f87171';
-    logoutLi.style.marginTop = '15px';
-    logoutLi.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
-    logoutLi.style.paddingTop = '15px';
-    logoutLi.innerHTML = '🚪 تسجيل الخروج';
-    logoutLi.onclick = (e) => {
-      e.preventDefault();
-      logout();
-    };
-    settingsLink.parentNode.insertBefore(logoutLi, settingsLink.nextSibling);
-  }
-}
-
 // ---------------- نظام تسجيل الدخول عبر Supabase Auth ----------------
 document.addEventListener('DOMContentLoaded', () => {
   const startBtn = document.getElementById('startBtn');
@@ -238,7 +210,6 @@ async function checkAuth() {
     if (appSec) appSec.classList.remove('hidden');
     
     await checkUserRole();
-    
 
     loadStateFromSupabase();
   } else {
@@ -643,5 +614,4 @@ function renderUI() {
   }
 
   checkUserRole();
-  addLogoutButtonToSidebar();
 }

@@ -99,7 +99,8 @@ async function checkUserRole() {
         const role = profileData[0].role;
 
         if (role !== 'admin') {
-          document.querySelectorAll('.btn-danger, button[onclick*="delete"]').forEach(el => {
+          // إخفاء أزرار الحذف فقط للمستخدم العادي دون المساس بزر تسجيل الخروج
+          document.querySelectorAll('button[onclick*="delete"]').forEach(el => {
             el.style.display = 'none';
           });
         }

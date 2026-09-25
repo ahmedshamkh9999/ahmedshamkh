@@ -599,3 +599,45 @@ tbody tr:hover {
   font-weight: 600;
   background-image: url('./فوري.jpeg');
 }
+/* --- تنسيق زر تبديل الوضع --- */
+.theme-toggle-btn {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-dark);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto !important;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--primary);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* --- ألوان الوضع النهاري (Light Mode) --- */
+body.light-mode {
+  --bg-main: #f3f4f6;
+  --bg-secondary: #ffffff;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --sidebar-bg: #ffffff;
+  --sidebar-hover: rgba(0, 0, 0, 0.04);
+  --text-dark: #111827;
+  --text-muted: #6b7280;
+}
+
+body.light-mode .top-bar,
+body.light-mode .app-footer {
+  background-color: #ffffff !important;
+}
+
+body.light-mode th {
+  background-color: #f9fafb !important;
+  color: #374151 !important;
+}

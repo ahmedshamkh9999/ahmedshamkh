@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,14 +11,16 @@
 </head>
 
 <body>
-  
+
   <!-- 1. شاشة البداية الترحيبية (تظهر أولاً) -->
   <div id="welcomeSection" class="login-wrapper">
     <div class="login-card" style="text-align: center;">
       <img src="فوري.jpeg" alt="لوجو الفرع" class="login-logo" onerror="this.style.display='none'">
       <h2>نظام الفرع</h2>
       <h3 style="color: #666; font-size: 15px; margin-bottom: 25px;">Welcome to System The Branch</h3>
-      <button type="button" id="startBtn" style="width: 100%; padding: 12px; background-color: #252c33; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">ابدأ الآن</button>
+      <button type="button" id="startBtn"
+        style="width: 100%; padding: 12px; background-color: #252c33; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">ابدأ
+        الآن</button>
     </div>
   </div>
 
@@ -28,13 +31,15 @@
       <h2>نظام الفرع</h2>
       <h3>welcom to system The Branch</h3>
       <form id="loginForm">
-        <input type="email" id="usernameInput" placeholder="البريد الإلكتروني (الإيميل)" required="من فضلك ادخل البريد الإلكتروني">
+        <input type="email" id="usernameInput" placeholder="البريد الإلكتروني (الإيميل)"
+          required="من فضلك ادخل البريد الإلكتروني">
         <input type="password" id="passwordInput" placeholder="كلمة المرور" required="من فضلك ادخل كلمة المرور">
         <button type="submit">تسجيل الدخول</button>
       </form>
       <div id="loginError" class="error-msg">برجاء ادخل البيانات صحيحه </div>
     </div>
   </div>
+
   <!-- التطبيق الرئيسي (مخفي حتى يتم تسجيل الدخول) -->
   <div id="appSection" class="app-wrapper hidden">
     <!-- القائمة الجانبية -->
@@ -56,9 +61,9 @@
         <li class="nav-item">
           <a class="nav-link" onclick="switchTab(event, 'creditorsTab')">دائنون</a>
         </li>
-        <!-- <li class="nav-item">
-          <a class="nav-link" onclick="switchTab(event, 'settingsTab')"> إعدادات الحساب</a>
-        </li> -->
+        <li class="nav-item">
+          <a class="nav-link" onclick="switchTab(event, 'settingsTab')"> مصروفات المحل </a>
+        </li>
       </ul>
       <div class="sidebar-footer">
         <button class="btn-danger btn-logout" onclick="logout()">تسجيل الخروج</button>
@@ -124,7 +129,8 @@
             <form id="serviceForm" class="form-grid">
               <input type="text" id="serviceNumInput" placeholder="رقم الخدمة" required="من فضلك ادخل رقم الخدمة">
               <input type="text" id="serviceClientInput" placeholder="اسم العميل" required="من فضلك ادخل اسم العميل">
-              <input type="number" id="serviceCostInput" placeholder="قيمة الخدمة" step="0.01" required="من فضلك ادخل قيمة الخدمة">
+              <input type="number" id="serviceCostInput" placeholder="قيمة الخدمة" step="0.01"
+                required="من فضلك ادخل قيمة الخدمة">
               <select id="servicePaymentStatus" required>
                 <option value="paid">تم التحصيل ف الدرج</option>
                 <option value="creditor">آجل (تُسجل في الدائنون)</option>
@@ -172,7 +178,8 @@
             <h3>تسجيل مستحق علينا</h3>
             <form id="debtorForm" class="form-grid">
               <input type="text" id="debtorName" placeholder="اسم الجهة / الشخص" required="من فضلك ادخل الاسم">
-              <input type="number" id="debtorAmount" placeholder="المبلغ المستحق" step="0.01" required="من فضلك ادخل المبلغ">
+              <input type="number" id="debtorAmount" placeholder="المبلغ المستحق" step="0.01"
+                required="من فضلك ادخل المبلغ">
               <input type="text" id="debtorReason" placeholder="السبب" required="من فضلك ادخل السبب">
               <button type="submit">تسجيل الدين</button>
             </form>
@@ -197,7 +204,8 @@
             <h3>تسجيل مبلغ لنا عند عميل/جهة</h3>
             <form id="creditorForm" class="form-grid">
               <input type="text" id="creditorName" placeholder="اسم العميل" required="من فضلك ادخل الاسم">
-              <input type="number" id="creditorAmount" placeholder="المبلغ المطلوب" step="0.01" required="من فضلك ادخل المبلغ">
+              <input type="number" id="creditorAmount" placeholder="المبلغ المطلوب" step="0.01"
+                required="من فضلك ادخل المبلغ">
               <input type="text" id="creditorReason" placeholder="السبب" required="من فضلك ادخل السبب">
               <button type="submit">تسجيل المبلغ</button>
             </form>
@@ -215,37 +223,24 @@
             <tbody id="creditorsTableBody"></tbody>
           </table>
         </div>
-        <!-- 6. قسم إعدادات الحساب -->
-        <!-- <div id="settingsTab" class="section-view">
-          <div class="form-container" style="max-width: 500px; margin: 0 auto;">
-            <h3>تغيير بيانات الدخول</h3>
-            <form id="changeAuthForm">
-              <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px;">كلمة السر الحالية:</label>
-                <input type="password" id="currentPasswordInput" placeholder="أدخل كلمة السر الحالية للتأكيد" required
-                  style="width: 100%; padding: 10px; box-sizing: border-box;">
-              </div>
-              <hr style="border: 0; border-top: 1px solid rgba(23, 15, 84, 0.1); margin: 20px 0;">
-              <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px;">اسم المستخدم الجديد:</label>
-                <input type="text" id="newUsernameInput" placeholder="أدخل اسم المستخدم الجديد" required
-                  style="width: 100%; padding: 10px; box-sizing: border-box;">
-              </div>
-              <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px;">كلمة السر الجديدة:</label>
-                <input type="password" id="newPasswordInput" placeholder="أدخل كلمة السر الجديدة" required
-                  style="width: 100%; padding: 10px; box-sizing: border-box;">
-              </div>
-              <button type="submit" style="width: 100%; padding: 12px; cursor: pointer;">تحديث البيانات</button>
+
+        <!-- 6. قسم مصروفات المحل (تخصم من الدرج فوراً) -->
+        <div id="settingsTab" class="section-view">
+          <div class="form-container" style="max-width: 600px; margin: 0 auto;">
+            <h3>تسجيل مصروف جديد</h3>
+            <form id="expenseForm" class="form-grid" style="grid-template-columns: 1fr;">
+              <input type="number" id="expenseAmount" placeholder="مبلغ المصروف" step="0.01" required>
+              <input type="text" id="expenseReason" placeholder="سبب المصروف (البيان)" required>
+              <button type="submit" style="background-color: #ef4444; color: white; padding: 12px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold;">  تسجيل المصروف</button>
             </form>
           </div>
-        </div> -->
-          
+        </div>
+
       </div>
-        <p>
-          <h6>@ahmedshamkh</h6>
-        </p>
-        
+      <p>
+      <h6>@ahmedshamkh</h6>
+      </p>
+
       <!-- الفوتر -->
       <footer class="app-footer">
         <div class="footer-content">
@@ -258,4 +253,5 @@
   </div>
   <script src="script.js"></script>
 </body>
+
 </html>

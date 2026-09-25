@@ -415,6 +415,51 @@ function collectCreditor(id) {
   });
 }
 
+// 5. مصروفات المحل (تخصم من الدرج وتُسجل تلقائياً)
+const expenseForm = document.getElementById('expenseForm');
+if (expenseForm) {
+  expenseForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+    const reason = document.getElementById('expenseReason').value.trim();
+
+    if (amount <= 0) {
+      Swal.fire('تنبيه', 'يرجى إدخال مبلغ صحيح للمصروف', 'warning');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
+        method: 'POST',
+        headers: getSupabaseHeaders(),
+        body: JSON.stringify({
+          type: 'out', // تسجل كحركة سحب لتخصم من الدرج فوراً
+          amount: Number(amount),
+          notes: `مصروف محل: ${reason}`
+        })
+      });
+
+      if (res.ok) {
+        await loadStateFromSupabase();
+        expenseForm.reset();
+        Swal.fire({
+          icon: 'success',
+          title: 'تم بنجاح',
+          text: 'تم خصم المصروف وتسجيله في الدرج بنجاح',
+          timer: 1200,
+          showConfirmButton: false
+        });
+      } else {
+        const errData = await res.json();
+        Swal.fire('خطأ', errData.message || 'فشل حفظ المصروف', 'error');
+      }
+    } catch (err) {
+      console.error('Expense error:', err);
+      Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
+    }
+  });
+}
+
 function deleteLog(id) {
   Swal.fire({
     title: 'Delete Transaction',

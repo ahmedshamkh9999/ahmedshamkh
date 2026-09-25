@@ -45,7 +45,7 @@ async function checkSystemStatus() {
       if (data && data.length > 0) {
         const setting = data[0];
         if (setting.status === 'locked' || setting.active === false) {
-          document.body.innerHTML = `sorry, the system is currently under maintenance. please try again later`;
+          document.body.innerHTML = `<h1 style="text-align:center; margin-top: 50px;">النظام مغلق حالياً للصيانة. يرجى المحاولة لاحقاً.</h1>`;
           return false;
         }
       }

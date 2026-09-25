@@ -23,6 +23,20 @@ let state = {
 // ---------------- نظام التحقق من حالة النظام (قفل/فتح) ----------------
 async function checkSystemStatus() {
   try {
+    // 1. التحقق من البريد الإلكتروني للمستخدم الحالي أولاً
+    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: getSupabaseHeaders()
+    });
+    
+    if (userRes.ok) {
+      const userData = await userRes.json();
+      // استبدل البريد التالي بالبريد الإلكتروني الذي تسجل به دخولك كمدير
+      if (userData.email === 'ahmed@admin.com') {
+        return true; // السماح لك بالدخول فوراً وتخطي شاشة الصيانة
+      }
+    }
+
+    // 2. الفحص العادي لباقي العُملاء إذا لم تكن أنت المدير
     const res = await fetch(`${SUPABASE_URL}/rest/v1/app_settings?select=*`, {
       headers: getSupabaseHeaders()
     });
@@ -31,43 +45,7 @@ async function checkSystemStatus() {
       if (data && data.length > 0) {
         const setting = data[0];
         if (setting.status === 'locked' || setting.active === false) {
-          document.body.innerHTML = `            
-            <div style="
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    height: 100vh; 
-    background: linear-gradient(135deg, #090d16 0%, #111827 50%, #1e1b4b 100%); 
-    font-family: 'Cairo', sans-serif; 
-    text-align: center; 
-    direction: rtl; 
-    padding: 20px;
-    margin: 0;
-  ">
-    <div style="
-      background: rgba(17, 24, 39, 0.75);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      border-radius: 20px;
-      padding: 45px 30px;
-      max-width: 450px;
-      width: 100%;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-    ">
-      <div style="font-size: 48px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));">⚠️</div>
-      <h2 style="color: #f87171; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">تم إيقاف النظام لعمل إجراء صيانة</h2>
-      <h2 style="color: #dfd8d8; font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">نأسف على الإزعاج النظام غير متاح حالياً</h2>  
-      <p style="color: #9ca3af; font-size: 20px; line-height: 1.6; margin-bottom: 25px;">يرجى التواصل مع الدعم الفني من خلال الرقم:</p>
-      <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239, 68, 68, 0.3); padding: 10px; border-radius: 10px; color: #fca5a5; font-size: 16px; font-weight: bold; direction: ltr; display: inline-block; margin-bottom: 20px;">
-        01040810091
-      </div>
-      <div style="font-size: 12px; color: #eef2f7; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 10px;">
-      نظام إدارة الأعمال الدعم الفني🔒
-      </div>
-    </div>
-  </div>
-          `;
+          document.body.innerHTML = `sorry, the system is currently under maintenance. please try again later`;
           return false;
         }
       }

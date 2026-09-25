@@ -63,7 +63,7 @@ async function checkSystemStatus() {
         01040810091
       </div>
       <div style="font-size: 12px; color: #eef2f7; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 10px;">
-        نظام إدارة الأعمال المؤمّن 🔒
+      نظام إدارة الأعمال الدعم الفني🔒
       </div>
     </div>
   </div>

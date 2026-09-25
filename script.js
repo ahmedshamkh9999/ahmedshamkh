@@ -261,11 +261,7 @@ async function loadStateFromSupabase() {
       fetch(`${SUPABASE_URL}/rest/v1/creditors?select=*`, { headers })
     ]);
 
-    if (txRes.status === 401 || srvRes.status === 401) {
-      localStorage.removeItem('sb_access_token');
-      checkAuth();
-      return;
-    }
+    // تم حذف شرط الـ 401 من هنا تماماً
 
     state.logs = txRes.ok ? await txRes.json() : [];
     state.services = srvRes.ok ? await srvRes.json() : [];

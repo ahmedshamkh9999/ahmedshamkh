@@ -109,106 +109,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const authForm = document.getElementById('changeAuthForm');
-if (authForm) {
-  authForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const currentPassword = document.getElementById('currentPasswordInput').value.trim();
-    const newUsername = document.getElementById('newUsernameInput').value.trim();
-    const newPassword = document.getElementById('newPasswordInput').value.trim();
+  if (authForm) {
+    authForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      Swal.fire('تنبيه', 'إدارة الحسابات تتم من لوحة تحكم من ادمن ', 'info');
+    });
+  }
 
-    if (!currentPassword) {
-      Swal.fire('تنبيه', 'يرجى إدخال كلمة السر الحالية للتأكيد', 'warning');
-      return;
-    }
-
-    if (!newUsername && !newPassword) {
-      Swal.fire('تنبيه', 'يرجى إدخال اسم المستخدم الجديد أو كلمة السر الجديدة على الأقل', 'warning');
-      return;
-    }
-
-    try {
-      const token = sessionStorage.getItem('sb_access_token');
-      
-      // 1. جلب البريد الإلكتروني (اسم المستخدم) الحالي للمسجل دخوله
-      const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!userRes.ok) {
-        throw new Error('فشل التحقق من المستخدم الحالي');
-      }
-      
-      // التصحيح تم هنا بإضافة const
-      const userData = await userRes.json();
-      const currentEmail = userData.email;
-
-      // 2. التحقق من صحة كلمة السر الحالية قبل التعديل
-      const verifyRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email: currentEmail, password: currentPassword })
-      });
-
-      if (!verifyRes.ok) {
-        Swal.fire({
-          icon: 'error',
-          title: 'خطأ',
-          text: 'كلمة السر الحالية غير صحيحة'
-        });
-        return;
-      }
-
-      // 3. تجهيز البيانات الجديدة للتحديث
-      const updateData = {};
-      if (newUsername) updateData.email = newUsername; 
-      if (newPassword) updateData.password = newPassword;
-
-      // 4. إرسال طلب التحديث إلى قاعدة البيانات
-      const updateRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-        method: 'PUT',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updateData)
-      });
-
-      if (updateRes.ok) {
-        Swal.fire({
-          icon: 'success',
-          title: 'تم التحديث بنجاح',
-          text: 'تم تغيير بيانات الدخول وحفظها في قاعدة البيانات بنجاح',
-          timer: 1500,
-          showConfirmButton: false
-        });
-        authForm.reset();
-      } else {
-        const errorData = await updateRes.json();
-        Swal.fire({
-          icon: 'error',
-          title: 'فشل التحديث',
-          text: errorData.msg || errorData.message || 'حدث خطأ أثناء تحديث البيانات'
-        });
-      }
-
-    } catch (err) {
-      console.error('Update auth error:', err);
-      Swal.fire({
-        icon: 'error',
-        title: 'خطأ',
-        text: 'فشل الاتصال بالسيرفر'
-      });
-    }
-  });
-}
+  checkAuth();
 });
 
 function logout() {

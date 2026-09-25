@@ -261,6 +261,12 @@ async function loadStateFromSupabase() {
       fetch(`${SUPABASE_URL}/rest/v1/creditors?select=*`, { headers })
     ]);
 
+    if (txRes.status === 401 || srvRes.status === 401) {
+      localStorage.removeItem('sb_access_token');
+      checkAuth();
+      return;
+    }
+
     state.logs = txRes.ok ? await txRes.json() : [];
     state.services = srvRes.ok ? await srvRes.json() : [];
     state.debtors = debRes.ok ? await debRes.json() : [];

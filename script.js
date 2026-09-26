@@ -55,6 +55,29 @@ async function checkSystemStatus() {
   return true;
 }
 
+// ---------------- جلب وعرض بيانات المستخدم الحالي (أيقونة + البريد) ----------------
+async function fetchUserInfo() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: getSupabaseHeaders()
+    });
+    if (res.ok) {
+      const userData = await res.json();
+      const userContainer = document.getElementById('userProfileInfo');
+      if (userContainer) {
+        userContainer.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.05); padding: 6px 14px; border-radius: 8px; font-size: 14px; color: #fff; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <i class="fas fa-user-circle" style="font-size: 20px; color: #3b82f6;"></i>
+            <span style="font-weight: 500;">${userData.email || 'مستخدم'}</span>
+          </div>
+        `;
+      }
+    }
+  } catch (err) {
+    console.error('فشل جلب بيانات المستخدم:', err);
+  }
+}
+
 // ---------------- نظام تسجيل الدخول عبر Supabase Auth ----------------
 document.addEventListener('DOMContentLoaded', () => {
   const startBtn = document.getElementById('startBtn');
@@ -111,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (authForm) {
     authForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      Swal.fire('تنبيه', 'إدارة الحسابات تتم من لوحة تحكم من ادمن ', 'info');
+      Swal.fire('تنبيه', 'إدارة الحسابات تتم من لوحة تحكم ادمن', 'info');
     });
   }
 
@@ -152,9 +175,14 @@ async function checkAuth() {
     if (loginSec) loginSec.classList.add('hidden');
     if (appSec) appSec.classList.remove('hidden');
 
+    // استدعاء دالة جلب وعرض بيانات المستخدم والأيقونة تلقائياً
+    await fetchUserInfo();
+
     loadStateFromSupabase();
   } else {
     if (appSec) appSec.classList.add('hidden');
+    const userContainer = document.getElementById('userProfileInfo');
+    if (userContainer) userContainer.innerHTML = '';
   }
 }
 
@@ -232,7 +260,7 @@ if (drawerForm) {
       if (res.ok) {
         await loadStateFromSupabase();
         e.target.reset();
-        Swal.fire({ icon: 'success', title: 'success fully', timer: 1200, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'successfully', timer: 1200, showConfirmButton: false });
       } else {
         Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the transaction' });
       }
@@ -294,7 +322,7 @@ if (serviceForm) {
 
       await loadStateFromSupabase();
       e.target.reset();
-      Swal.fire({ icon: 'success', title: 'success fully', timer: 1200, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'successfully', timer: 1200, showConfirmButton: false });
     } catch (err) {
       console.error('Service error:', err);
       Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the service' });
@@ -319,7 +347,7 @@ if (debtorForm) {
       });
       await loadStateFromSupabase();
       e.target.reset();
-      Swal.fire({ icon: 'success', title: 'success fully add the debtor', timer: 1200, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'successfully add the debtor', timer: 1200, showConfirmButton: false });
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to add the debtor' });
     }
@@ -564,7 +592,6 @@ function renderUI() {
       const amt = Number(log.amount || 0).toFixed(2);
       const timeStr = log.created_at ? new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
       
-      // تحسين البيان لإبراز رقم الخدمة في شارة (Badge) مميزة
       let formattedNotes = log.notes || '';
       if (formattedNotes.includes('تحصيل خدمة')) {
         formattedNotes = formattedNotes.replace(/خدمة \((.*?)\)/g, '<span class="badge" style="background: #3b82f6; color: #fff; padding: 3px 8px; border-radius: 6px; font-weight: bold; margin-left: 5px;">خدمة رقم: $1</span>');

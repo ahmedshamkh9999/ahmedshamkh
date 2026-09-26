@@ -641,3 +641,11 @@ body.light-mode th {
   background-color: #f9fafb !important;
   color: #374151 !important;
 }
+.btn-warning {
+  background-color: #f59e0b;
+  color: #ffffff;
+  box-shadow: none !important;
+}
+.btn-warning:hover {
+  background-color: #d97706;
+}

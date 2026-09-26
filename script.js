@@ -30,7 +30,6 @@ async function checkSystemStatus() {
     
     if (userRes.ok) {
       const userData = await userRes.json();
-      // استبدل البريد التالي بالبريد الإلكتروني الذي تسجل به دخولك كمدير
       if (userData.email === 'ahmed@admin.com') {
         return true; // السماح لك بالدخول فوراً وتخطي شاشة الصيانة
       }
@@ -243,7 +242,7 @@ if (drawerForm) {
   });
 }
 
-// 2. أرقام الخدمة
+// 2. أرقام الخدمة (مُحدثة للربط التلقائي بالمدينون والدائنون)
 const serviceForm = document.getElementById('serviceForm');
 if (serviceForm) {
   serviceForm.addEventListener('submit', async (e) => {
@@ -254,17 +253,42 @@ if (serviceForm) {
     const status = document.getElementById('servicePaymentStatus').value;
 
     try {
+      // 1. حفظ الخدمة الأساسية
       await fetch(`${SUPABASE_URL}/rest/v1/services`, {
         method: 'POST',
         headers: getSupabaseHeaders(),
         body: JSON.stringify({ num, client, cost, status })
       });
 
+      // 2. التحقق من الحالة لتوجيه المبلغ تلقائياً
       if (status === 'paid') {
+        // إيداع مباشر في الدرج
         await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
           method: 'POST',
           headers: getSupabaseHeaders(),
           body: JSON.stringify({ type: 'in', amount: cost, notes: `تحصيل خدمة (${num}) - العميل: ${client}` })
+        });
+      } else if (status === 'debtor') {
+        // إرسال تلقائي لجدول المدينون
+        await fetch(`${SUPABASE_URL}/rest/v1/debtors`, {
+          method: 'POST',
+          headers: getSupabaseHeaders(),
+          body: JSON.stringify({
+            name: client,
+            amount: cost,
+            reason: `خدمة رقم: ${num}`
+          })
+        });
+      } else if (status === 'creditor' || status === 'debt') {
+        // إرسال تلقائي لجدول الدائنون
+        await fetch(`${SUPABASE_URL}/rest/v1/creditors`, {
+          method: 'POST',
+          headers: getSupabaseHeaders(),
+          body: JSON.stringify({
+            name: client,
+            amount: cost,
+            reason: `خدمة رقم: ${num}`
+          })
         });
       }
 
@@ -272,6 +296,7 @@ if (serviceForm) {
       e.target.reset();
       Swal.fire({ icon: 'success', title: 'success fully', timer: 1200, showConfirmButton: false });
     } catch (err) {
+      console.error('Service error:', err);
       Swal.fire({ icon: 'error', title: 'خطأ', text: 'failed to save the service' });
     }
   });
@@ -544,7 +569,12 @@ function renderUI() {
           <td><span class="badge ${isIncome ? 'badge-success' : 'badge-danger'}">${isIncome ? 'إيداع (+)' : 'سحب (-)'}</span></td>
           <td><strong>${amt} ج.م</strong></td>
           <td>${log.notes || ''}</td>
-          <td><button class="btn-danger btn-small" onclick="deleteLog(${log.id})">حذف</button></td>
+          <td>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+              <button class="btn-warning btn-small" onclick="editLog(${log.id})">تعديل</button>
+              <button class="btn-danger btn-small" onclick="deleteLog(${log.id})">حذف</button>
+            </div>
+          </td>
         </tr>
       `;
     }).join('');
@@ -596,5 +626,69 @@ function renderUI() {
         <td><button class="btn-success" onclick="collectCreditor(${c.id})">تحصيل للدرج</button></td>
       </tr>
     `).join('');
+  }
+}
+
+async function editLog(id) {
+  const log = state.logs.find(l => l.id == id);
+  if (!log) return;
+
+  const { value: formValues } = await Swal.fire({
+    title: 'تعديل المعاملة',
+    html: `
+      <div style="display: flex; flex-direction: column; gap: 12px; text-align: right; direction: rtl;">
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #fff;">المبلغ:</label>
+          <input id="swal-input-amount" type="number" class="swal2-input" value="${log.amount}" style="margin: 0; width: 100%; background: #1f2937; color: #fff; border: 1px solid #374151;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #fff;">البيان / الملاحظات:</label>
+          <input id="swal-input-notes" type="text" class="swal2-input" value="${log.notes || ''}" style="margin: 0; width: 100%; background: #1f2937; color: #fff; border: 1px solid #374151;">
+        </div>
+      </div>
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'حفظ التعديل',
+    cancelButtonText: 'إلغاء',
+    confirmButtonColor: '#2563eb',
+    cancelButtonColor: '#64748b',
+    preConfirm: () => {
+      const amount = document.getElementById('swal-input-amount').value;
+      const notes = document.getElementById('swal-input-notes').value;
+      if (!amount || isNaN(amount) || Number(amount) <= 0) {
+        Swal.showValidationMessage('يرجى إدخال مبلغ صحيح');
+        return false;
+      }
+      return { amount: parseFloat(amount), notes };
+    }
+  });
+
+  if (formValues) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/transactions?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: getSupabaseHeaders(),
+        body: JSON.stringify({
+          amount: formValues.amount,
+          notes: formValues.notes
+        })
+      });
+
+      if (res.ok) {
+        await loadStateFromSupabase();
+        Swal.fire({
+          icon: 'success',
+          title: 'تم التعديل بنجاح',
+          timer: 1200,
+          showConfirmButton: false
+        });
+      } else {
+        Swal.fire('خطأ', 'فشل تحديث المعاملة', 'error');
+      }
+    } catch (err) {
+      console.error('Edit error:', err);
+      Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
+    }
   }
 }

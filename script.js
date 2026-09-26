@@ -563,12 +563,19 @@ function renderUI() {
       const isIncome = String(log.type || '').toLowerCase() === 'in';
       const amt = Number(log.amount || 0).toFixed(2);
       const timeStr = log.created_at ? new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+      
+      // تحسين البيان لإبراز رقم الخدمة في شارة (Badge) مميزة
+      let formattedNotes = log.notes || '';
+      if (formattedNotes.includes('تحصيل خدمة')) {
+        formattedNotes = formattedNotes.replace(/خدمة \((.*?)\)/g, '<span class="badge" style="background: #3b82f6; color: #fff; padding: 3px 8px; border-radius: 6px; font-weight: bold; margin-left: 5px;">خدمة رقم: $1</span>');
+      }
+
       return `
         <tr>
           <td>${timeStr}</td>
           <td><span class="badge ${isIncome ? 'badge-success' : 'badge-danger'}">${isIncome ? 'إيداع (+)' : 'سحب (-)'}</span></td>
           <td><strong>${amt} ج.م</strong></td>
-          <td>${log.notes || ''}</td>
+          <td>${formattedNotes}</td>
           <td>
             <div style="display: flex; gap: 8px; justify-content: flex-end;">
               <button class="btn-warning btn-small" onclick="editLog(${log.id})">تعديل</button>
